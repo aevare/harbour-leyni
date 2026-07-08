@@ -1,0 +1,23 @@
+*~
+.DS_Store
+*.pro.user
+*.pro.user.*
+*.autosave
+RPMS
+build/
+.mb2/
+dev/vw-data/
+
+# In-place CMake/mb2 build artifacts (synced back by the Docker build helper)
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+documentation.list
+*_autogen/
+*.o
+*.a
+*.qm
+/harbour-bitvault
