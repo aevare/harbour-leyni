@@ -114,7 +114,10 @@ Page {
             Image {
                 id: favoriteIcon
                 visible: model.favorite
-                source: "image://theme/icon-s-favorite-selected"
+                // No icon-s-favorite-* exists in the theme; scale the
+                // medium one down.
+                source: "image://theme/icon-m-favorite-selected"
+                sourceSize { width: Theme.iconSizeExtraSmall; height: Theme.iconSizeExtraSmall }
                 width: Theme.iconSizeExtraSmall
                 height: Theme.iconSizeExtraSmall
                 anchors {
