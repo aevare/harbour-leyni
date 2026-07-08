@@ -11,24 +11,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      # Releases must match existing coderus/sailfishos-platform-sdk Docker
+      # tags (the action uses the release string as the image tag):
+      # https://hub.docker.com/r/coderus/sailfishos-platform-sdk/tags
       matrix:
-        target:
-          - SailfishOS-4.5.0.18-armv7hl
-          - SailfishOS-4.5.0.18-aarch64
-          - SailfishOS-4.6.0.13-armv7hl
-          - SailfishOS-4.6.0.13-aarch64
-          - SailfishOS-5.0.0.43-armv7hl
-          - SailfishOS-5.0.0.43-aarch64
+        release:
+          - 4.5.0.16
+          - 4.6.0.13
+          - 5.0.0.43
+        arch:
+          - armv7hl
+          - aarch64
     steps:
       - uses: actions/checkout@v4
 
       - name: Build RPM
         uses: CODeRUS/github-sfos-build@master
         with:
-          release: ${{ matrix.target }}
+          release: ${{ matrix.release }}
+          arch: ${{ matrix.arch }}
 
       - name: Upload RPM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rpm-${{ matrix.target }}
-          path: RPMS/*.rpm
+          name: rpm-${{ matrix.release }}-${{ matrix.arch }}
+          path: |
+            RPMS/*.rpm
+            RPMS/**/*.rpm
