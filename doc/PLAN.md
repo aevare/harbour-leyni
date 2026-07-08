@@ -153,13 +153,16 @@ Goal: a daily-driver app for viewing and copying credentials.
 
 **Done when:** the full flow — login, sync, search, copy a password, watch the clipboard
 clear, lock — works on a real device.
-*Status: builds rpmlint-clean; **needs the on-device pass** (login against a real account,
-theme-icon spot-check — icon names could not be verified off-device).*
+*Status: **verified on a real device 2026-07-08** — full flow works (login, sync, search,
+copy, clipboard clear, lock). Runtime QML fixes and a request timeout came out of that
+pass. UX polish deferred to Phase 5 (tracked there).*
 
 ## Phase 5 — Hardening and first release
 
 Goal: earn the trust the project promises, then ship.
 
+- [ ] UX polish pass from Phase 4 device testing (owner: collect concrete annoyances
+      on-device; nothing security-relevant)
 - [ ] Write `SECURITY.md` (repo root): threat model, key lifecycle, what is stored where,
       platform limitations, how to report vulnerabilities
 - [ ] Self-audit pass against the architecture rules (no secret ever crosses into `ui/`;

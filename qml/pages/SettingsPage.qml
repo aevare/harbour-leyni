@@ -22,14 +22,20 @@ Page {
 
             SectionHeader { text: qsTr("Security") }
 
+            // Both combos: currentIndex is set ONCE at completion instead of
+            // being bound — a binding here depends on the very setting the
+            // change handler writes, which is a binding loop. The `ready`
+            // guard keeps initialization from echoing a write back.
             ComboBox {
                 id: autoLockCombo
                 width: parent.width
                 label: qsTr("Auto-lock")
                 property var values: [1, 5, 15, 60, 0]
-                currentIndex: {
+                property bool ready: false
+                Component.onCompleted: {
                     var i = values.indexOf(App.autoLockMinutes)
-                    return i >= 0 ? i : 0
+                    currentIndex = i >= 0 ? i : 0
+                    ready = true
                 }
                 menu: ContextMenu {
                     MenuItem { text: qsTr("1 minute") }
@@ -38,7 +44,9 @@ Page {
                     MenuItem { text: qsTr("1 hour") }
                     MenuItem { text: qsTr("Never") }
                 }
-                onCurrentIndexChanged: App.autoLockMinutes = values[currentIndex]
+                onCurrentIndexChanged: {
+                    if (ready) { App.autoLockMinutes = values[currentIndex] }
+                }
             }
 
             ComboBox {
@@ -46,9 +54,11 @@ Page {
                 width: parent.width
                 label: qsTr("Clear clipboard")
                 property var values: [15, 30, 60, 0]
-                currentIndex: {
+                property bool ready: false
+                Component.onCompleted: {
                     var i = values.indexOf(App.clipboardClearSeconds)
-                    return i >= 0 ? i : 0
+                    currentIndex = i >= 0 ? i : 0
+                    ready = true
                 }
                 menu: ContextMenu {
                     MenuItem { text: qsTr("15 seconds") }
@@ -56,13 +66,18 @@ Page {
                     MenuItem { text: qsTr("60 seconds") }
                     MenuItem { text: qsTr("Never") }
                 }
-                onCurrentIndexChanged: App.clipboardClearSeconds = values[currentIndex]
+                onCurrentIndexChanged: {
+                    if (ready) { App.clipboardClearSeconds = values[currentIndex] }
+                }
             }
 
             TextSwitch {
                 text: qsTr("Lock when minimized")
+                // automaticCheck off + write-on-click avoids the binding
+                // loop of checked ↔ the setting it writes.
+                automaticCheck: false
                 checked: App.lockOnMinimize
-                onCheckedChanged: App.lockOnMinimize = checked
+                onClicked: App.lockOnMinimize = !App.lockOnMinimize
             }
 
             SectionHeader { text: qsTr("Account") }
