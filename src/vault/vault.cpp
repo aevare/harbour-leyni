@@ -121,6 +121,22 @@ bool Vault::loadSync(const QByteArray &rawJson, QString *errorMessage,
 bool Vault::unlock(const QString &email, Crypto::SecureBytes password,
                    const Crypto::KdfParams &kdfParams, QString *errorMessage)
 {
+    try {
+        const std::string emailLower =
+            email.trimmed().toLower().toStdString();
+        SecureBytes masterKey =
+            Crypto::deriveMasterKey(password, emailLower, kdfParams);
+        return unlockWithMasterKey(std::move(masterKey), errorMessage);
+    } catch (const CryptoError &e) {
+        *errorMessage = QStringLiteral("unlock failed: %1")
+                            .arg(QString::fromUtf8(e.what()));
+        return false;
+    }
+}
+
+bool Vault::unlockWithMasterKey(Crypto::SecureBytes masterKey,
+                                QString *errorMessage)
+{
     if (m_data.profileKey.empty()) {
         *errorMessage = QStringLiteral("no vault data loaded");
         return false;
@@ -128,10 +144,6 @@ bool Vault::unlock(const QString &email, Crypto::SecureBytes password,
     lock();
 
     try {
-        const std::string emailLower =
-            email.trimmed().toLower().toStdString();
-        SecureBytes masterKey =
-            Crypto::deriveMasterKey(password, emailLower, kdfParams);
         SymmetricKey stretched = Crypto::stretchMasterKey(masterKey);
 
         SecureBytes userKeyRaw;
@@ -146,61 +158,7 @@ bool Vault::unlock(const QString &email, Crypto::SecureBytes password,
         }
         m_userKey = Crypto::symmetricKeyFromBytes(userKeyRaw);
 
-        if (!m_data.profilePrivateKey.empty()) {
-            m_privateKeyDer = Crypto::decryptAes256CbcHmac(
-                EncString::parse(m_data.profilePrivateKey), m_userKey);
-        }
-
-        // Organization keys are RSA-wrapped with the account key. A broken
-        // org key must not brick the personal vault: skip it, its ciphers
-        // will report an error on access.
-        for (const Organization &org : m_data.organizations) {
-            if (m_privateKeyDer.empty()) {
-                break;
-            }
-            try {
-                SecureBytes orgKeyRaw = Crypto::decryptRsaOaepSha1(
-                    EncString::parse(org.key), m_privateKeyDer);
-                m_orgKeys.emplace(org.id,
-                                  Crypto::symmetricKeyFromBytes(orgKeyRaw));
-            } catch (const CryptoError &) {
-                continue;
-            }
-        }
-
-        for (const Folder &folder : m_data.folders) {
-            m_folderNames.insert(folder.id,
-                                 decryptToString(folder.name, m_userKey));
-        }
-
-        m_items.reserve(m_data.ciphers.size());
-        for (const EncryptedCipher &cipher : m_data.ciphers) {
-            SymmetricKey key;
-            QString keyError;
-            if (!cipherKey(cipher, &key, &keyError)) {
-                continue; // org key unavailable; skip from display
-            }
-            DecryptedItem item;
-            item.id = cipher.id;
-            item.type = cipher.type;
-            item.folderId = cipher.folderId;
-            item.organizationId = cipher.organizationId;
-            item.favorite = cipher.favorite;
-            item.name = decryptToString(cipher.name, key);
-            if (cipher.type == CipherType::Login) {
-                if (!cipher.login.username.empty()) {
-                    item.username =
-                        decryptToString(cipher.login.username, key);
-                }
-                if (!cipher.login.uris.empty()) {
-                    item.primaryUri =
-                        decryptToString(cipher.login.uris.front(), key);
-                }
-                item.hasTotp = !cipher.login.totp.empty();
-                item.hasPassword = !cipher.login.password.empty();
-            }
-            m_items.push_back(item);
-        }
+        rebuildDisplayData();
     } catch (const CryptoError &e) {
         lock();
         *errorMessage = QStringLiteral("unlock failed: %1")
@@ -214,6 +172,101 @@ bool Vault::unlock(const QString &email, Crypto::SecureBytes password,
     }
     emit lockedChanged(false);
     return true;
+}
+
+bool Vault::reloadSync(const QByteArray &rawJson, QString *errorMessage,
+                       int *skippedCiphers)
+{
+    if (m_locked) {
+        *errorMessage = QStringLiteral("vault is locked");
+        return false;
+    }
+    SyncData data;
+    if (!parseSyncJson(rawJson, &data, errorMessage, skippedCiphers)) {
+        return false;
+    }
+    // The user key in memory is only known to fit if the account's protected
+    // key is unchanged. If it changed (password change/rotation on the
+    // server), fail closed: lock and demand the password.
+    if (data.profileKey != m_data.profileKey) {
+        lock();
+        *errorMessage =
+            QStringLiteral("account keys changed — please unlock again");
+        return false;
+    }
+
+    m_data = std::move(data);
+    m_orgKeys.clear();
+    m_items.clear();
+    m_folderNames.clear();
+    try {
+        rebuildDisplayData();
+    } catch (const CryptoError &e) {
+        lock();
+        *errorMessage = QStringLiteral("re-sync failed: %1")
+                            .arg(QString::fromUtf8(e.what()));
+        return false;
+    }
+    return true;
+}
+
+void Vault::rebuildDisplayData()
+{
+    if (!m_data.profilePrivateKey.empty()) {
+        m_privateKeyDer = Crypto::decryptAes256CbcHmac(
+            EncString::parse(m_data.profilePrivateKey), m_userKey);
+    }
+
+    // Organization keys are RSA-wrapped with the account key. A broken
+    // org key must not brick the personal vault: skip it, its ciphers
+    // will report an error on access.
+    for (const Organization &org : m_data.organizations) {
+        if (m_privateKeyDer.empty()) {
+            break;
+        }
+        try {
+            SecureBytes orgKeyRaw = Crypto::decryptRsaOaepSha1(
+                EncString::parse(org.key), m_privateKeyDer);
+            m_orgKeys.emplace(org.id,
+                              Crypto::symmetricKeyFromBytes(orgKeyRaw));
+        } catch (const CryptoError &) {
+            continue;
+        }
+    }
+
+    for (const Folder &folder : m_data.folders) {
+        m_folderNames.insert(folder.id,
+                             decryptToString(folder.name, m_userKey));
+    }
+
+    m_items.reserve(m_data.ciphers.size());
+    for (const EncryptedCipher &cipher : m_data.ciphers) {
+        SymmetricKey key;
+        QString keyError;
+        if (!cipherKey(cipher, &key, &keyError)) {
+            continue; // org key unavailable; skip from display
+        }
+        DecryptedItem item;
+        item.id = cipher.id;
+        item.type = cipher.type;
+        item.folderId = cipher.folderId;
+        item.organizationId = cipher.organizationId;
+        item.favorite = cipher.favorite;
+        item.name = decryptToString(cipher.name, key);
+        if (cipher.type == CipherType::Login) {
+            if (!cipher.login.username.empty()) {
+                item.username =
+                    decryptToString(cipher.login.username, key);
+            }
+            if (!cipher.login.uris.empty()) {
+                item.primaryUri =
+                    decryptToString(cipher.login.uris.front(), key);
+            }
+            item.hasTotp = !cipher.login.totp.empty();
+            item.hasPassword = !cipher.login.password.empty();
+        }
+        m_items.push_back(item);
+    }
 }
 
 void Vault::lock()

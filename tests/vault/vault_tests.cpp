@@ -334,6 +334,47 @@ void testAutoLock(const QByteArray &fixtureJson)
     std::printf("auto-lock: OK (locked after timeout)\n");
 }
 
+// reloadSync: a re-sync while unlocked keeps the vault usable without the
+// password; a changed protected key fails closed into the locked state.
+void testReloadSync(const QByteArray &fixtureJson)
+{
+    Vault vault;
+    QString error;
+    CHECK(vault.loadSync(fixtureJson, &error));
+    CHECK(vault.unlock(QStringLiteral("fixture@bitvault.test"),
+                       toSecureBytes("FixtureVault123!"), fixtureKdf(),
+                       &error));
+
+    // Same blob again (unchanged protected key): stays unlocked, items intact.
+    const size_t itemCount = vault.items().size();
+    CHECK(vault.reloadSync(fixtureJson, &error));
+    CHECK(!vault.isLocked());
+    CHECK(vault.items().size() == itemCount);
+    QString pwError;
+    const DecryptedItem *login =
+        findByName(vault.items(), QStringLiteral("Example Login"));
+    CHECK(login != nullptr);
+    CHECK(vault.itemPassword(login->id, &pwError)
+          == QStringLiteral("s3cret-Pa55"));
+
+    // Tampered profile key (simulates a server-side password change):
+    // must lock and fail with a re-auth message.
+    QJsonObject root = QJsonDocument::fromJson(fixtureJson).object();
+    QJsonObject profile = root.value(QStringLiteral("profile")).toObject();
+    QString key = profile.value(QStringLiteral("key")).toString();
+    key[3] = key[3] == QLatin1Char('A') ? QLatin1Char('B') : QLatin1Char('A');
+    profile.insert(QStringLiteral("key"), key);
+    root.insert(QStringLiteral("profile"), profile);
+    const QByteArray changed = QJsonDocument(root).toJson();
+
+    CHECK(!vault.reloadSync(changed, &error));
+    CHECK(vault.isLocked());
+    CHECK(vault.items().empty());
+
+    // While locked, reloadSync must refuse outright.
+    CHECK(!vault.reloadSync(fixtureJson, &error));
+}
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -348,6 +389,7 @@ int main(int argc, char *argv[])
     testUnlockAndLookups(fixtureJson);
     testLockClearsStateAndSignals(fixtureJson);
     testAutoLock(fixtureJson);
+    testReloadSync(fixtureJson);
 
     std::printf("vault_tests: all checks passed\n");
     return 0;

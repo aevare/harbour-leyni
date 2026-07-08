@@ -50,6 +50,21 @@ public:
     bool unlock(const QString &email, Crypto::SecureBytes password,
                 const Crypto::KdfParams &kdfParams, QString *errorMessage);
 
+    // Same, but from an already-derived master key — for callers that run
+    // the slow KDF on a worker thread (the vault itself must stay on its
+    // owning thread because of the auto-lock QTimer). The key is destroyed
+    // (zeroed) when this returns.
+    bool unlockWithMasterKey(Crypto::SecureBytes masterKey,
+                             QString *errorMessage);
+
+    // Replaces the vault contents after a re-sync WITHOUT requiring the
+    // password again: re-parses the blob and re-decrypts display data with
+    // the keys currently in memory. If the account's protected key changed
+    // (e.g. password change on the server), this locks and returns false —
+    // the caller must ask for the password.
+    bool reloadSync(const QByteArray &rawJson, QString *errorMessage,
+                    int *skippedCiphers = nullptr);
+
     void lock();
     bool isLocked() const { return m_locked; }
 
@@ -79,6 +94,10 @@ signals:
     void lockedChanged(bool locked);
 
 private:
+    // Decrypts org keys, folder names, and item display fields from m_data
+    // using the user key already in memory. Throws CryptoError upward.
+    void rebuildDisplayData();
+
     const EncryptedCipher *findCipher(const QString &itemId) const;
     // Resolves the key protecting a cipher's fields: per-item key if
     // present, else the organization key, else the user key.
