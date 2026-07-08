@@ -12,6 +12,10 @@ Page {
 
     Component.onDestruction: passwordField.text = ""
 
+    // remorseAction() only exists on ListItem — a pulley MenuItem needs an
+    // explicit RemorsePopup.
+    RemorsePopup { id: signOutRemorse }
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height
@@ -27,7 +31,8 @@ Page {
             }
             MenuItem {
                 text: qsTr("Sign out")
-                onClicked: remorseAction(qsTr("Signing out"), function() { App.signOut() })
+                onClicked: signOutRemorse.execute(qsTr("Signing out"),
+                                                  function() { App.signOut() })
             }
         }
 

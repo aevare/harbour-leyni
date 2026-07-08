@@ -6,6 +6,16 @@ Page {
     allowedOrientations: Orientation.All
     readonly property string pageName: "SetupPage.qml"
 
+    // Explicit navigation is required here: SetupPage is part of the
+    // router's allowed family for the "login" state (so it can be pushed
+    // from LoginPage's "Change account"), which means the router will NOT
+    // move away from this page on the setup→login state change — and when
+    // re-configuring an account the state doesn't change at all.
+    function saveAndContinue() {
+        App.configureAccount(serverField.text, emailField.text)
+        pageStack.replaceAbove(null, Qt.resolvedUrl("LoginPage.qml"))
+    }
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height
@@ -44,14 +54,14 @@ Page {
                 inputMethodHints: Qt.ImhEmailCharactersOnly | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 EnterKey.iconSource: "image://theme/icon-m-enter-accept"
                 EnterKey.enabled: serverField.text.length > 0 && emailField.text.length > 0
-                EnterKey.onClicked: App.configureAccount(serverField.text, emailField.text)
+                EnterKey.onClicked: saveAndContinue()
             }
 
             Button {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Continue")
                 enabled: serverField.text.length > 0 && emailField.text.length > 0
-                onClicked: App.configureAccount(serverField.text, emailField.text)
+                onClicked: saveAndContinue()
             }
         }
 

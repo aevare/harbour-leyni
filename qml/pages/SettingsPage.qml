@@ -6,6 +6,10 @@ Page {
     allowedOrientations: Orientation.All
     readonly property string pageName: "SettingsPage.qml"
 
+    // remorseAction() only exists on ListItem — a Button needs an explicit
+    // RemorsePopup.
+    RemorsePopup { id: signOutRemorse }
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height
@@ -83,7 +87,8 @@ Page {
             Button {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Sign out")
-                onClicked: remorseAction(qsTr("Signing out"), function() { App.signOut() })
+                onClicked: signOutRemorse.execute(qsTr("Signing out"),
+                                                  function() { App.signOut() })
             }
         }
 
