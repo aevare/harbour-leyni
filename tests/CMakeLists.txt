@@ -5,6 +5,7 @@ add_executable(crypto_tests
     crypto/main.cpp
     crypto/rsa_tests.cpp
     crypto/securebytes_tests.cpp
+    crypto/totp_tests.cpp
     crypto/vector_tests.cpp
 )
 target_link_libraries(crypto_tests PRIVATE bitvault-crypto)
@@ -32,4 +33,22 @@ if(TARGET bitvault-api)
         OpenSSL::Crypto)
     add_test(NAME api_integration_tests COMMAND api_integration_tests)
     set_tests_properties(api_integration_tests PROPERTIES LABELS "integration")
+
+    # One-off fixture generator (Phase 3): populates a local Vaultwarden and
+    # saves its /api/sync response to tests/fixtures/sync.json. Not a test —
+    # no add_test — run manually against a live server; see
+    # tests/fixtures/README.md.
+    add_executable(generate_sync_fixture fixtures/generate_sync_fixture.cpp)
+    target_link_libraries(generate_sync_fixture PRIVATE
+        bitvault-api bitvault-crypto Qt5::Core Qt5::Network OpenSSL::Crypto)
+
+    # Vault layer tests (Phase 3): offline, unlock the committed sync.json
+    # fixture with no network. Part of the default `ctest -LE integration`
+    # run; see doc/TESTING.md Layer 2.
+    add_executable(vault_tests vault/vault_tests.cpp)
+    target_compile_definitions(vault_tests PRIVATE
+        BITVAULT_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
+    target_link_libraries(vault_tests PRIVATE
+        bitvault-vault bitvault-api bitvault-crypto Qt5::Core Qt5::Network)
+    add_test(NAME vault_tests COMMAND vault_tests)
 endif()

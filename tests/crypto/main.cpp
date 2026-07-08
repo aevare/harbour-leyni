@@ -9,6 +9,7 @@ void runEncStringTests();
 void runKdfBoundsTests();
 void runVectorTests();
 void runRsaTests();
+void runTotpTests();
 
 int main()
 {
@@ -26,6 +27,8 @@ int main()
     std::printf("known-answer vectors: OK\n");
     runRsaTests();
     std::printf("rsa oaep: OK\n");
+    runTotpTests();
+    std::printf("totp: OK\n");
 
     std::printf("crypto_tests: all checks passed\n");
     return 0;

@@ -21,6 +21,7 @@ add_library(bitvault-crypto STATIC
     kdf.cpp
     keys.cpp
     securebytes.cpp
+    totp.cpp
 )
 target_include_directories(bitvault-crypto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(bitvault-crypto PUBLIC OpenSSL::Crypto argon2)
