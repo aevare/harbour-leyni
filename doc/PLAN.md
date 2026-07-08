@@ -10,8 +10,9 @@ A fully native, open-source Bitwarden client for Sailfish OS.
 3. **Honest about platform limits** — no system-wide autofill on Sailfish OS, no WebAuthn 2FA,
    no hardware keystore. We document what we cannot do instead of pretending.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the layering rules and [PROTOCOL.md](PROTOCOL.md)
-for the Bitwarden protocol reference.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the layering rules, [PROTOCOL.md](PROTOCOL.md)
+for the Bitwarden protocol reference, and [TESTING.md](TESTING.md) for the test strategy
+(known-answer vectors, integration tests, what is deliberately not automated).
 
 ---
 
@@ -32,7 +33,7 @@ Goal: an empty app that builds, packages, and has CI proving it.
 - [x] Verify packaging: Dockerized mb2 build (SFOS 5.0.0.43 aarch64) produces
       `harbour-bitvault-0.1-1.aarch64.rpm`, rpmlint 0 errors
       (fixed: template's `$<BUILD_INTERFACE:>` include-path mangling, dir perms, changelog)
-- [ ] Still open: install the RPM on a device/emulator and see the placeholder page launch
+- [x] Verified on a real device: RPM installs and the placeholder page launches (2026-07-08)
 
 **Done when:** both CI workflows are green on every push and the empty app runs on a device
 or emulator.
