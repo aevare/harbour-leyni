@@ -23,7 +23,7 @@ jobs:
           - armv7hl
           - aarch64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build RPM
         uses: CODeRUS/github-sfos-build@master
@@ -32,7 +32,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Upload RPM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: rpm-${{ matrix.release }}-${{ matrix.arch }}
           path: |
