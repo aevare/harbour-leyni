@@ -7,6 +7,10 @@ Page {
     readonly property string pageName: "VaultPage.qml"
 
     property var folderList: []
+    // Mirrors the header's SearchField text: the field lives inside the
+    // ListView header component, whose ids are not reliably reachable from
+    // outside it (e.g. from the ViewPlaceholder below).
+    property string searchText: ""
 
     function reloadFolders() {
         folderList = App.folders()
@@ -44,7 +48,10 @@ Page {
                 width: parent.width
                 placeholderText: qsTr("Search vault")
                 inputMethodHints: Qt.ImhNoPredictiveText
-                onTextChanged: App.vaultModel.setSearchQuery(text)
+                onTextChanged: {
+                    page.searchText = text
+                    App.vaultModel.setSearchQuery(text)
+                }
             }
 
             ComboBox {
@@ -158,7 +165,7 @@ Page {
 
         ViewPlaceholder {
             enabled: listView.count === 0
-            text: searchField.text.length > 0 ? qsTr("No matches") : qsTr("No items")
+            text: page.searchText.length > 0 ? qsTr("No matches") : qsTr("No items")
         }
 
         VerticalScrollDecorator {}

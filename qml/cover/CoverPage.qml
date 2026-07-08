@@ -25,14 +25,16 @@ CoverBackground {
         }
     }
 
+    // CoverAction has no `visible` property on SFOS Silica — gate the whole
+    // list with `enabled` instead (both actions are unlocked-only).
     CoverActionList {
+        enabled: App.state === "unlocked"
+
         CoverAction {
-            visible: App.state === "unlocked"
             iconSource: "image://theme/icon-cover-refresh"
             onTriggered: App.syncNow()
         }
         CoverAction {
-            visible: App.state === "unlocked"
             iconSource: "image://theme/icon-cover-cancel"
             onTriggered: App.lock()
         }
