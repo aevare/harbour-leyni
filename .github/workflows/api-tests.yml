@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Started explicitly rather than as a `services:` container: the
       # service path gates the whole job on the image's own healthcheck
@@ -17,8 +17,12 @@ jobs:
       # wait condition and the logs are ours.
       - name: Start Vaultwarden
         run: |
+          # Volatile storage is intentional in CI: every run gets a fresh
+          # instance; newer Vaultwarden requires the explicit opt-in flag.
           docker run -d --name vaultwarden \
-            -e SIGNUPS_ALLOWED=true -p 8000:80 vaultwarden/server:latest
+            -e SIGNUPS_ALLOWED=true \
+            -e I_REALLY_WANT_VOLATILE_STORAGE=true \
+            -p 8000:80 vaultwarden/server:latest
           for i in $(seq 1 60); do
             if curl -sf http://127.0.0.1:8000/alive > /dev/null; then exit 0; fi
             sleep 2
