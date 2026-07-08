@@ -3,12 +3,17 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QTimer>
 #include <QUrl>
 
 namespace BitVault {
 namespace Api {
 
 namespace {
+
+// Qt 5.6 has no QNetworkAccessManager transfer timeout; without one, a
+// hung server leaves the app spinning forever.
+const int kRequestTimeoutMs = 30000;
 
 int httpStatusOf(QNetworkReply *reply)
 {
@@ -19,8 +24,21 @@ ApiError transportError(QNetworkReply *reply)
 {
     ApiError error;
     error.networkError = true;
-    error.message = reply->errorString();
+    error.message = reply->error() == QNetworkReply::OperationCanceledError
+        ? QStringLiteral("request timed out")
+        : reply->errorString();
     return error;
+}
+
+// Aborts the reply if it is still running after kRequestTimeoutMs; the
+// abort surfaces through the normal finished() path as a transport error.
+void armTimeout(QNetworkReply *reply)
+{
+    QTimer *timer = new QTimer(reply);
+    timer->setSingleShot(true);
+    QObject::connect(timer, &QTimer::timeout, reply, &QNetworkReply::abort);
+    QObject::connect(reply, &QNetworkReply::finished, timer, &QTimer::stop);
+    timer->start(kRequestTimeoutMs);
 }
 
 } // namespace
@@ -48,7 +66,9 @@ QNetworkReply *ApiClient::post(const QString &url, const QByteArray &body,
     if (!authEmail.isEmpty()) {
         request.setRawHeader("Auth-Email", authEmail);
     }
-    return m_network->post(request, body);
+    QNetworkReply *reply = m_network->post(request, body);
+    armTimeout(reply);
+    return reply;
 }
 
 void ApiClient::prelogin(const QString &email,
@@ -166,6 +186,7 @@ void ApiClient::sync(const QByteArray &accessToken,
     request.setRawHeader("Accept", "application/json");
     request.setRawHeader("Authorization", "Bearer " + accessToken);
     QNetworkReply *reply = m_network->get(request);
+    armTimeout(reply);
     connect(reply, &QNetworkReply::finished, this, [reply, callback]() {
         reply->deleteLater();
         Result<QByteArray> result;
