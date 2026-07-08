@@ -3,6 +3,9 @@ project(harbour-bitvault C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# The SFOS app links -pie (sailfishapp requirement), so every static lib
+# feeding it must be position-independent.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(BUILD_APP "Build the Sailfish OS application (requires the SFOS SDK)" ON)
 option(BUILD_API "Build the API/vault layers and their tests (requires Qt5 Core+Network)" OFF)
@@ -16,7 +19,7 @@ endif()
 add_subdirectory(tests)
 
 if(BUILD_APP)
-    find_package(Qt5 COMPONENTS Core Network Qml Gui Quick REQUIRED)
+    find_package(Qt5 COMPONENTS Core Concurrent Network Qml Gui Quick REQUIRED)
 
     include(FindPkgConfig)
     pkg_search_module(SAILFISH sailfishapp REQUIRED)
@@ -30,7 +33,10 @@ if(BUILD_APP)
         OWNER_READ OWNER_WRITE OWNER_EXECUTE
         GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-    add_executable(harbour-bitvault src/main.cpp)
+    add_executable(harbour-bitvault
+        src/main.cpp
+        src/ui/appcontroller.cpp
+    )
     target_compile_definitions(harbour-bitvault PRIVATE
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>
     )
@@ -39,6 +45,7 @@ if(BUILD_APP)
     target_include_directories(harbour-bitvault PRIVATE ${SAILFISH_INCLUDE_DIRS})
     target_link_libraries(harbour-bitvault
         Qt5::Quick
+        Qt5::Concurrent
         bitvault-api
         bitvault-vault
         ${SAILFISH_LDFLAGS}
@@ -61,13 +68,12 @@ if(BUILD_APP)
     install(FILES icons/172x172/harbour-bitvault.png DESTINATION share/icons/hicolor/172x172/apps)
 
     FILE(GLOB TsFiles "translations/*.ts")
+    FILE(GLOB_RECURSE QmlFiles "qml/*.qml")
     add_custom_target(distfiles
         SOURCES
             harbour-bitvault.desktop
-            qml/harbour-bitvault.qml
-            qml/cover/CoverPage.qml
-            qml/pages/FirstPage.qml
             rpm/harbour-bitvault.changes
             rpm/harbour-bitvault.spec
+            ${QmlFiles}
             ${TsFiles})
 endif()

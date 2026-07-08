@@ -1,0 +1,166 @@
+// The single QML-facing controller. Owns the ApiClient, the Vault, the
+// list model, persisted settings, and all security policy:
+//   - the master password is converted to SecureBytes immediately on entry
+//     from QML and never retained beyond the operation that needs it
+//   - key derivation runs on a worker thread (QtConcurrent); the Vault is
+//     only ever touched from the GUI thread
+//   - clipboard copies auto-clear after a configurable timeout
+//   - the vault locks on app minimize (configurable) and on auto-lock
+//   - QML gets display data and one-shot secret fetches only; no key
+//     material, no security decisions in JavaScript (doc/ARCHITECTURE.md)
+//
+// States: "setup" (no account), "login" (account, no session), "twofactor"
+// (login pending a code), "locked" (sync blob present), "unlocked".
+#pragma once
+
+#include <QFutureWatcher>
+#include <QObject>
+#include <QSettings>
+#include <QTimer>
+#include <QString>
+#include <QStringList>
+#include <QVariantList>
+#include <QVariantMap>
+
+#include <memory>
+
+#include "apiclient.h"
+#include "securebytes.h"
+#include "syncstore.h"
+#include "vault.h"
+#include "vaultmodel.h"
+
+namespace BitVault {
+namespace Ui {
+
+// Result of the worker-thread KDF run (shared_ptr because QFuture requires
+// a copyable payload; the pointee is moved out exactly once on the GUI
+// thread and zeroed by SecureBytes semantics).
+struct DerivedSecrets {
+    Crypto::SecureBytes masterKey;
+    QByteArray passwordHashB64;
+    QString error;
+};
+
+class AppController : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QString state READ state NOTIFY stateChanged)
+    Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
+    Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
+    Q_PROPERTY(QObject *vaultModel READ vaultModel CONSTANT)
+    Q_PROPERTY(QString serverUrl READ serverUrl NOTIFY accountChanged)
+    Q_PROPERTY(QString email READ email NOTIFY accountChanged)
+    Q_PROPERTY(int itemCount READ itemCount NOTIFY vaultChanged)
+    Q_PROPERTY(QVariantList twoFactorProviders READ twoFactorProviders
+                   NOTIFY stateChanged)
+    Q_PROPERTY(int autoLockMinutes READ autoLockMinutes
+                   WRITE setAutoLockMinutes NOTIFY settingsChanged)
+    Q_PROPERTY(int clipboardClearSeconds READ clipboardClearSeconds
+                   WRITE setClipboardClearSeconds NOTIFY settingsChanged)
+    Q_PROPERTY(bool lockOnMinimize READ lockOnMinimize
+                   WRITE setLockOnMinimize NOTIFY settingsChanged)
+
+public:
+    explicit AppController(QObject *parent = nullptr);
+
+    QString state() const { return m_state; }
+    bool busy() const { return m_busy; }
+    QString lastError() const { return m_lastError; }
+    QObject *vaultModel() { return &m_model; }
+    QString serverUrl() const;
+    QString email() const;
+    int itemCount() const { return static_cast<int>(m_vault.items().size()); }
+    QVariantList twoFactorProviders() const { return m_twoFactorProviders; }
+
+    int autoLockMinutes() const;
+    void setAutoLockMinutes(int minutes);
+    int clipboardClearSeconds() const;
+    void setClipboardClearSeconds(int seconds);
+    bool lockOnMinimize() const;
+    void setLockOnMinimize(bool on);
+
+    // --- account/session ---
+    Q_INVOKABLE void configureAccount(const QString &serverUrl,
+                                      const QString &email);
+    Q_INVOKABLE void startLogin(const QString &password);
+    Q_INVOKABLE void submitTwoFactor(int provider, const QString &code,
+                                     bool remember);
+    Q_INVOKABLE void requestEmailCode();
+    Q_INVOKABLE void cancelLogin();
+    Q_INVOKABLE void unlock(const QString &password);
+    Q_INVOKABLE void lock();
+    Q_INVOKABLE void syncNow();
+    // Forgets tokens and the local blob; back to "login" (keeps account).
+    Q_INVOKABLE void signOut();
+
+    // --- item access (thin proxies over Vault; see vault.h) ---
+    Q_INVOKABLE QString itemPassword(const QString &itemId);
+    Q_INVOKABLE QString itemNotes(const QString &itemId);
+    Q_INVOKABLE QVariantList itemDetailFields(const QString &itemId);
+    Q_INVOKABLE QVariantMap totpFor(const QString &itemId);
+    Q_INVOKABLE QString folderName(const QString &folderId);
+    Q_INVOKABLE QVariantList folders();
+
+    // --- clipboard with auto-clear ---
+    Q_INVOKABLE void copyToClipboard(const QString &text);
+
+    Q_INVOKABLE void noteActivity();
+
+signals:
+    void stateChanged();
+    void busyChanged();
+    void lastErrorChanged();
+    void accountChanged();
+    void vaultChanged();
+    void settingsChanged();
+    // One-shot toast requests for QML (e.g. "Copied — clears in 30 s").
+    void notify(const QString &message);
+
+private:
+    void setState(const QString &state);
+    void setBusy(bool busy);
+    void setError(const QString &message);
+    Api::ServerConfig currentServerConfig() const;
+    Api::DeviceInfo deviceInfo();
+    Crypto::KdfParams storedKdfParams() const;
+    void storeKdfParams(const Crypto::KdfParams &params);
+
+    // Runs deriveMasterKey(+ password hash) off-thread, then `next` on the
+    // GUI thread with the result.
+    void deriveAsync(const QString &password, const Crypto::KdfParams &params,
+                     std::function<void(std::shared_ptr<DerivedSecrets>)> next);
+
+    void finishLogin(const Api::TokenResponse &token);
+    void applySyncBlob(const QByteArray &blob, bool freshLogin);
+    void refreshAndSync(bool freshLogin);
+    void handleAppStateChanged(Qt::ApplicationState state);
+    void clearClipboardIfOurs();
+
+    QSettings m_settings;
+    Api::ApiClient m_api;
+    Vault::Vault m_vault;
+    Vault::VaultListModel m_model;
+    Vault::SyncStore m_syncStore;
+
+    QString m_state;
+    bool m_busy = false;
+    QString m_lastError;
+    QVariantList m_twoFactorProviders;
+
+    // Session (memory only).
+    QByteArray m_accessToken;
+    QByteArray m_refreshToken;
+
+    // Pending login context while a 2FA code is required.
+    QByteArray m_pendingHash;
+    std::shared_ptr<DerivedSecrets> m_pendingSecrets;
+
+    QString m_clipboardExpected;
+    QTimer m_clipboardTimer;
+
+    QFutureWatcher<std::shared_ptr<DerivedSecrets>> m_deriveWatcher;
+};
+
+} // namespace Ui
+} // namespace BitVault

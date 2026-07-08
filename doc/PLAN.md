@@ -132,17 +132,29 @@ published RFC values at fixed timestamps.*
 
 Goal: a daily-driver app for viewing and copying credentials.
 
-- [ ] Login flow: server URL → email → password → 2FA pages
-- [ ] Unlock page (master password; this is the default and most secure mode)
-- [ ] Vault list with `SearchField`, folder sections, item-type icons
-- [ ] Item detail page: reveal-on-tap password, copy buttons, TOTP with countdown
-- [ ] Clipboard auto-clear N seconds after any copy (default on)
-- [ ] Cover page: locked/unlocked state, item count, lock action — never item data
-- [ ] Settings: auto-lock timeout, clipboard timeout, server URL
-- [ ] QML rule enforced: presentation only, no security-relevant JavaScript
+- [x] Login flow: SetupPage (server/email) → LoginPage → TwoFactorPage (TOTP +
+      email code request); state machine lives entirely in `AppController` (C++),
+      KDF runs on a QtConcurrent worker so the UI never blocks on 600k PBKDF2
+- [x] Unlock page (master password; offline-capable via stored blob + cached KDF
+      params); "sign out" wipes tokens and the local blob
+- [x] Vault list with `SearchField` (live), folder filter, item-type icons,
+      favorite markers
+- [x] Item detail page: reveal-on-tap password (re-mask drops the plaintext;
+      copy path never populates the reveal property), copy buttons everywhere,
+      TOTP with countdown (1 s timer only while the page is active), lazy
+      notes/details. Secrets cleared on page deactivate, destruction, AND lock.
+- [x] Clipboard auto-clear N seconds after any copy (default 30 s; never clears
+      a clipboard the user has since overwritten elsewhere)
+- [x] Cover page: locked/unlocked + item count + lock/sync actions — never item data
+- [x] Settings: auto-lock timeout, clipboard timeout, lock-on-minimize, account
+      info, sign out (with remorse)
+- [x] QML rule enforced: presentation only — verified by grep (no XMLHttpRequest/
+      LocalStorage/eval) and by the single `App` context-property bridge
 
 **Done when:** the full flow — login, sync, search, copy a password, watch the clipboard
 clear, lock — works on a real device.
+*Status: builds rpmlint-clean; **needs the on-device pass** (login against a real account,
+theme-icon spot-check — icon names could not be verified off-device).*
 
 ## Phase 5 — Hardening and first release
 
