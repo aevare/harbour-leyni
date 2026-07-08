@@ -8,16 +8,24 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      vaultwarden:
-        image: vaultwarden/server:latest
-        env:
-          SIGNUPS_ALLOWED: "true"
-        ports:
-          - 8000:80
-
     steps:
       - uses: actions/checkout@v4
+
+      # Started explicitly rather than as a `services:` container: the
+      # service path gates the whole job on the image's own healthcheck
+      # (which failed opaquely in "Initialize containers"); this way the
+      # wait condition and the logs are ours.
+      - name: Start Vaultwarden
+        run: |
+          docker run -d --name vaultwarden \
+            -e SIGNUPS_ALLOWED=true -p 8000:80 vaultwarden/server:latest
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8000/alive > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          echo "Vaultwarden did not become ready:"
+          docker logs vaultwarden
+          exit 1
 
       - name: Install dependencies
         run: |
@@ -33,7 +41,11 @@ jobs:
       - name: Unit tests
         run: ctest --test-dir build -LE integration --output-on-failure
 
-      - name: Integration tests (against Vaultwarden service container)
+      - name: Integration tests (against local Vaultwarden)
         env:
           BITVAULT_TEST_SERVER: http://127.0.0.1:8000
         run: ctest --test-dir build -L integration --output-on-failure
+
+      - name: Vaultwarden logs (on failure)
+        if: failure()
+        run: docker logs vaultwarden || true
