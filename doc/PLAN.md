@@ -102,16 +102,31 @@ manual checklist item (needs a real cloud test account — deliberately not in C
 
 Goal: the in-memory decrypted vault and its lifecycle.
 
-- [ ] Parse the sync JSON: ciphers (logins, notes, cards, identities), folders, collections
-- [ ] Unlock: derive keys → verify → decrypt item names/fields into memory only
-- [ ] Lock: drop and zero all decrypted material and keys; auto-lock timer;
-      lock on app minimize (configurable)
-- [ ] Search and folder filtering over decrypted items
-- [ ] TOTP code generation (RFC 6238) for stored authenticator secrets
-- [ ] `QAbstractListModel` exposing **display data only** to QML — never key material
+- [x] Parse the sync JSON: ciphers (logins, notes, cards, identities), folders,
+      collections; camelCase/PascalCase tolerant; malformed ciphers skipped and
+      counted, never fatal (`syncparser.cpp`, pure functions)
+- [x] Unlock: derive → stretch → decrypt protected key (MAC mismatch = clean
+      "wrong master password") → private key → org keys (RSA) → per-item keys
+      honored → **display fields only** decrypted into memory. Secret payloads
+      (passwords, TOTP secrets, notes, card/identity fields) are decrypted
+      per-access on demand and never cached.
+- [x] Lock: SecureBytes destructors zero all keys; decrypted display data cleared
+      (QString allocations cannot be zeroed — accepted for names, never keys);
+      auto-lock QTimer with activity reset. Lock-on-minimize is a Phase 4 UI hook
+      calling the same `lock()`.
+- [x] Search and folder filtering over decrypted items (in `VaultListModel`)
+- [x] TOTP: RFC 6238 in the crypto layer (SHA1/256/512, HOTP dynamic truncation,
+      strict base32) with full RFC 4226 Appendix D + RFC 6238 Appendix B KATs;
+      vault layer parses raw-base32 and otpauth:// secrets (steam:// rejected
+      explicitly) and reports the countdown
+- [x] `VaultListModel` (QAbstractListModel): display roles only, contract
+      documented in the header; clears itself on lock via `lockedChanged`
 
 **Done when:** a test can unlock a synced vault, find an item by search, read its password,
 generate its TOTP, and lock — with memory zeroed after lock.
+*Status: exactly this flow runs offline in `tests/vault/vault_tests.cpp` against a committed
+Vaultwarden-generated fixture (`tests/fixtures/`, regeneration documented); TOTP asserts the
+published RFC values at fixed timestamps.*
 
 ## Phase 4 — UI MVP (`qml/` + `src/ui/`), read-only
 
