@@ -5,9 +5,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_APP "Build the Sailfish OS application (requires the SFOS SDK)" ON)
+option(BUILD_API "Build the API/vault layers and their tests (requires Qt5 Core+Network)" OFF)
 
 enable_testing()
 add_subdirectory(src/crypto)
+if(BUILD_APP OR BUILD_API)
+    add_subdirectory(src/api)
+    add_subdirectory(src/vault)
+endif()
 add_subdirectory(tests)
 
 if(BUILD_APP)
@@ -34,6 +39,8 @@ if(BUILD_APP)
     target_include_directories(harbour-bitvault PRIVATE ${SAILFISH_INCLUDE_DIRS})
     target_link_libraries(harbour-bitvault
         Qt5::Quick
+        bitvault-api
+        bitvault-vault
         ${SAILFISH_LDFLAGS}
     )
 

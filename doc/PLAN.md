@@ -72,19 +72,31 @@ official client for the same inputs.
 
 Goal: talk to a Bitwarden/Vaultwarden server. Depends on `crypto/` and Qt Network only.
 
-- [ ] Server configuration: bitwarden.com default, custom URL for self-hosted/Vaultwarden
-- [ ] `POST /identity/accounts/prelogin` → KDF type + parameters
-- [ ] `POST /identity/connect/token` — OAuth2 password grant; parse access/refresh token
-      and the protected symmetric key
-- [ ] 2FA: TOTP and email provider flows (WebAuthn explicitly out of scope — document it)
-- [ ] Handle Bitwarden-cloud new-device verification; offer API-key login as fallback
-- [ ] Token refresh; re-auth path when refresh fails
-- [ ] `GET /api/sync` → store the response **as-is** (it is already end-to-end encrypted)
-      in the Sailjail-private data dir
-- [ ] Integration tests against the local Vaultwarden from Phase 0
+- [x] Server configuration: `ServerConfig` — cloud US/EU presets, custom base URL for
+      self-hosted/Vaultwarden
+- [x] `POST /identity/accounts/prelogin` → KDF type + parameters (validated in the
+      crypto layer's bounds checks when used)
+- [x] `POST /identity/connect/token` — OAuth2 password grant; parse access/refresh token
+      and the protected symmetric key. Design: protocol bodies/parsing live in `apijson.cpp`
+      (pure functions, unit-tested offline); `apiclient.cpp` is transport only.
+      The raw master password never enters this layer — only the derived hash.
+- [x] 2FA: TOTP tokens on login + email provider (`send-email-login`); WebAuthn out of
+      scope (no Silica-compatible platform authenticator UI; revisit post-MVP)
+- [x] New-device verification detected and surfaced (`newDeviceOtp` supported);
+      API-key login (`client_credentials`) implemented as fallback
+- [x] Token refresh (re-auth path when refresh fails is UI-driven — Phase 4)
+- [x] `GET /api/sync` → stored **as-is** via `vault/SyncStore` (atomic QSaveFile,
+      Sailjail-private data dir; blob is already end-to-end encrypted)
+- [x] Integration tests against local Vaultwarden: register (built with our crypto) →
+      prelogin → wrong-password rejected → login → **interop check: server-returned
+      protected key decrypts to the exact user key we generated** → sync → SyncStore
+      round-trip → token refresh → re-sync. Offline unit tests cover all parsing/
+      building including 2FA-challenge, captcha, and PascalCase/camelCase variants.
 
 **Done when:** a headless test binary can log in to local Vaultwarden and to a bitwarden.com
 test account, and persists a sync blob.
+*Status: Vaultwarden path fully green in CI-mirror runs. The bitwarden.com login is a
+manual checklist item (needs a real cloud test account — deliberately not in CI).*
 
 ## Phase 3 — Vault layer (`src/vault/`)
 

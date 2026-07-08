@@ -1,0 +1,39 @@
+name: API tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      vaultwarden:
+        image: vaultwarden/server:latest
+        env:
+          SIGNUPS_ALLOWED: "true"
+        ports:
+          - 8000:80
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libssl-dev qtbase5-dev
+
+      - name: Configure
+        run: cmake -B build -DBUILD_APP=OFF -DBUILD_API=ON
+
+      - name: Build
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Unit tests
+        run: ctest --test-dir build -LE integration --output-on-failure
+
+      - name: Integration tests (against Vaultwarden service container)
+        env:
+          BITVAULT_TEST_SERVER: http://127.0.0.1:8000
+        run: ctest --test-dir build -L integration --output-on-failure
