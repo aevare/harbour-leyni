@@ -1,0 +1,9 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    ports:
+      - "8000:80"
+    volumes:
+      - ./vw-data:/data
+    environment:
+      SIGNUPS_ALLOWED: "true"
