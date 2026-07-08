@@ -1,13 +1,22 @@
-// This directory will contain the auditable crypto core (see doc/ARCHITECTURE.md).
-// It must never gain dependencies beyond libcrypto and vendored libargon2, and it
-// must never do I/O. Everything here is pure functions: bytes in, bytes out.
+// The auditable crypto core (see doc/ARCHITECTURE.md).
 //
-// This file is a Phase 0 placeholder. The real API (SecureBytes, kdf, keys,
-// EncString) lands in Phase 1.
+// Rules for everything in src/crypto/:
+//   - depends only on libcrypto (OpenSSL 1.1.1+) and the vendored argon2
+//   - no I/O, no network, no globals: pure functions, bytes in, bytes out
+//   - every failure throws CryptoError; nothing fails into empty/garbage output
 #pragma once
+
+#include <stdexcept>
+#include <string>
 
 namespace BitVault {
 namespace Crypto {
+
+class CryptoError : public std::runtime_error
+{
+public:
+    explicit CryptoError(const std::string &what) : std::runtime_error(what) {}
+};
 
 const char *version();
 
