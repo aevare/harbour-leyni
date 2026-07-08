@@ -43,19 +43,27 @@ or emulator.
 Goal: the entire auditable core, finished and tested before any UI exists.
 Depends only on libcrypto (+ vendored libargon2). No Qt GUI, no networking, no file I/O.
 
-- [ ] `SecureBytes` — mlock'd, zero-on-destroy, non-copyable buffer; **no** conversion
+- [x] `SecureBytes` — mlock'd, zero-on-destroy, non-copyable buffer; **no** conversion
       to `QString`
-- [ ] Master key derivation: PBKDF2-SHA256 (variable iterations) and Argon2id
-      (vendor libargon2 into the app's bundled-lib dir per Harbour rules)
-- [ ] Master password hash (server auth value): PBKDF2(masterKey, password, 1 iteration)
-- [ ] Key stretching: HKDF-SHA256 expand → 64 bytes (32 enc + 32 mac)
-- [ ] `EncString` parse + decrypt: `2.<iv>|<ct>|<mac>` — AES-256-CBC + HMAC-SHA256,
-      **MAC verified before decrypt**, constant-time compare
-- [ ] `EncString` encrypt (needed later for write support; cheap to do now while in context)
-- [ ] RSA-2048-OAEP-SHA1 unwrap for organization keys
-- [ ] Known-answer tests: derive expected values for a test account with the official
-      client / rbw, hard-code them as fixtures; plus negative tests (bad MAC must fail closed)
-- [ ] Every public function documented: inputs, outputs, what it must never do
+- [x] Master key derivation: PBKDF2-SHA256 (variable iterations) and Argon2id
+      (reference impl vendored at `third_party/argon2`, built from source — compiled
+      into the binary, so no bundled-lib dir needed); server-supplied KDF params are
+      bounds-checked so a hostile prelogin cannot demand unbounded memory/time
+- [x] Master password hash (server auth value): PBKDF2(masterKey, password, 1 iteration)
+- [x] Key stretching: HKDF-SHA256 expand → 64 bytes (32 enc + 32 mac)
+- [x] `EncString` parse + decrypt: `2.<iv>|<ct>|<mac>` — AES-256-CBC + HMAC-SHA256,
+      **MAC verified before decrypt**, constant-time compare; all other types rejected
+      explicitly (type 4 RSA supported for org keys)
+- [x] `EncString` encrypt (needed later for write support; cheap to do now while in context)
+- [x] RSA-2048-OAEP-SHA1 unwrap for organization keys (round-trip tested vs OpenSSL's
+      independent encrypt path; a true interop KAT lands with the Phase 2 test account)
+- [x] Known-answer tests, two tiers per doc/TESTING.md: RFC 5869 / RFC 4231 / RFC 7914 /
+      NIST SP 800-38A / phc-winner-argon2 primitives, plus Bitwarden's own SDK vectors
+      (bitwarden/sdk-internal @ 4963a281) proving byte-identical master-key derivation,
+      stretch, password hash, and EncString decrypt; negative tests fail closed
+      (tampered MAC/IV/ciphertext, wrong key, 10+ malformed-parse cases).
+      Suite passes plain and under ASan+UBSan.
+- [x] Every public function documented: inputs, outputs, what it must never do
 
 **Done when:** crypto tests pass on plain-Linux CI and outputs are byte-identical to the
 official client for the same inputs.

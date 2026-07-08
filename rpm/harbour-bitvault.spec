@@ -13,6 +13,7 @@ BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5Quick)
 BuildRequires:  pkgconfig(Qt5Network)
+BuildRequires:  pkgconfig(libcrypto)
 BuildRequires:  desktop-file-utils
 BuildRequires:  cmake
 
