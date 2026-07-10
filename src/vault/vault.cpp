@@ -253,6 +253,9 @@ void Vault::rebuildDisplayData()
         item.organizationId = cipher.organizationId;
         item.favorite = cipher.favorite;
         item.name = decryptToString(cipher.name, key);
+        item.hasNotes = !cipher.notes.empty();
+        item.hasDetails = !cipher.fields.empty() || !cipher.cardFields.empty()
+            || !cipher.identityFields.empty();
         if (cipher.type == CipherType::Login) {
             if (!cipher.login.username.empty()) {
                 item.username =

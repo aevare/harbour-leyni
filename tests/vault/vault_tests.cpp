@@ -152,6 +152,8 @@ void testUnlockAndLookups(const QByteArray &fixtureJson)
     CHECK(login1->primaryUri == QStringLiteral("https://example.com"));
     CHECK(login1->hasTotp);
     CHECK(login1->hasPassword);
+    CHECK(!login1->hasNotes);   // fixture: notes null, fields empty
+    CHECK(!login1->hasDetails);
 
     const DecryptedItem *login2 = findByName(items, QStringLiteral("Work Login"));
     CHECK(login2 != nullptr);
@@ -162,10 +164,12 @@ void testUnlockAndLookups(const QByteArray &fixtureJson)
     CHECK(note != nullptr);
     CHECK(note->favorite);
     CHECK(note->type == CipherType::SecureNote);
+    CHECK(note->hasNotes);
 
     const DecryptedItem *card = findByName(items, QStringLiteral("Fixture Card"));
     CHECK(card != nullptr);
     CHECK(card->type == CipherType::Card);
+    CHECK(card->hasDetails);
     std::printf("items(): OK (found Example Login, Work Login, Fixture Note, "
                 "Fixture Card)\n");
 
@@ -225,16 +229,34 @@ void testUnlockAndLookups(const QByteArray &fixtureJson)
         model.refresh();
         CHECK(static_cast<size_t>(model.rowCount()) == items.size());
 
+        // Favourites sort first ("Fixture Note" is the fixture's only
+        // favourite), and hasFavorites tracks the filtered view.
+        CHECK(model.data(model.index(0, 0), VaultListModel::NameRole).toString()
+              == QStringLiteral("Fixture Note"));
+        CHECK(model.data(model.index(0, 0), VaultListModel::FavoriteRole).toBool());
+        CHECK(model.hasFavorites());
+
+        // Filtering must emit row-level updates only — a model reset per
+        // keystroke makes the vault page's ListView rebuild, which dismisses
+        // the keyboard while typing in the header search field.
+        int resetCount = 0;
+        QObject::connect(&model, &QAbstractItemModel::modelReset,
+                         [&resetCount]() { ++resetCount; });
+
         model.setSearchQuery(QStringLiteral("work"));
         CHECK(model.rowCount() == 1);
         CHECK(model.data(model.index(0, 0), VaultListModel::NameRole).toString()
               == QStringLiteral("Work Login"));
+        CHECK(!model.hasFavorites()); // no favourite matches "work"
 
         model.setSearchQuery(QStringLiteral("alice"));
         CHECK(model.rowCount() == 1); // matches by username
 
         model.setSearchQuery(QString());
         CHECK(static_cast<size_t>(model.rowCount()) == items.size());
+        CHECK(model.data(model.index(0, 0), VaultListModel::NameRole).toString()
+              == QStringLiteral("Fixture Note")); // sort intact after diffs
+        CHECK(resetCount == 0);
 
         model.setFolderFilter(login2->folderId);
         CHECK(model.rowCount() == 1);
@@ -244,6 +266,7 @@ void testUnlockAndLookups(const QByteArray &fixtureJson)
 
         model.setFolderFilter(QString());
         CHECK(static_cast<size_t>(model.rowCount()) == items.size());
+        CHECK(resetCount == 0); // folder switches diff too
 
         // Display-only contract: exactly the roles in the spec, nothing
         // that could carry a secret.
@@ -257,7 +280,8 @@ void testUnlockAndLookups(const QByteArray &fixtureJson)
             QByteArrayLiteral("username"), QByteArrayLiteral("uri"),
             QByteArrayLiteral("cipherType"), QByteArrayLiteral("favorite"),
             QByteArrayLiteral("folderId"), QByteArrayLiteral("hasTotp"),
-            QByteArrayLiteral("hasPassword"),
+            QByteArrayLiteral("hasPassword"), QByteArrayLiteral("hasNotes"),
+            QByteArrayLiteral("hasDetails"),
         };
         CHECK(roleNames == expected);
 

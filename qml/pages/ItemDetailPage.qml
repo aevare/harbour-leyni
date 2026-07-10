@@ -15,6 +15,8 @@ Page {
     property int cipherType: 1
     property bool hasTotp: false
     property bool hasPassword: false
+    property bool hasNotes: false
+    property bool hasDetails: false
 
     // Secrets fetched on demand. Every one of these MUST be cleared when
     // the page stops being usable (destroyed, hidden, or the vault locks)
@@ -284,19 +286,34 @@ Page {
                 }
             }
 
-            SectionHeader { text: qsTr("Notes") }
+            SectionHeader {
+                text: qsTr("Notes")
+                visible: hasNotes
+            }
 
-            Button {
+            Row {
+                visible: hasNotes
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: notesVisible ? qsTr("Hide notes") : qsTr("Show notes")
-                onClicked: {
-                    if (notesVisible) {
-                        revealedNotes = ""
-                        notesVisible = false
-                    } else {
-                        revealedNotes = App.itemNotes(itemId)
-                        notesVisible = true
+                spacing: Theme.paddingMedium
+
+                Button {
+                    text: notesVisible ? qsTr("Hide notes") : qsTr("Show notes")
+                    onClicked: {
+                        if (notesVisible) {
+                            revealedNotes = ""
+                            notesVisible = false
+                        } else {
+                            revealedNotes = App.itemNotes(itemId)
+                            notesVisible = true
+                        }
                     }
+                }
+                IconButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon.source: "image://theme/icon-m-clipboard"
+                    // Copies without ever populating revealedNotes, like the
+                    // password copy button above.
+                    onClicked: App.copyToClipboard(App.itemNotes(itemId))
                 }
             }
 
@@ -309,9 +326,13 @@ Page {
                 color: Theme.primaryColor
             }
 
-            SectionHeader { text: qsTr("Details") }
+            SectionHeader {
+                text: qsTr("Details")
+                visible: hasDetails
+            }
 
             Button {
+                visible: hasDetails
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: detailsVisible ? qsTr("Hide details") : qsTr("Show details")
                 onClicked: {
