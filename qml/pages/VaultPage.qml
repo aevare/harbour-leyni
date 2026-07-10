@@ -16,6 +16,16 @@ Page {
         folderList = App.folders()
     }
 
+    // Refiltering the list can dismiss the keyboard on device even with
+    // row-level model updates (root cause not pinned down yet — see
+    // todo.md), so hold off until the user pauses typing. Clearing and
+    // Enter apply immediately.
+    Timer {
+        id: searchDebounce
+        interval: 400
+        onTriggered: App.vaultModel.setSearchQuery(page.searchText)
+    }
+
     function iconForType(cipherType) {
         switch (cipherType) {
         case 1: return "image://theme/icon-m-website"
@@ -38,6 +48,15 @@ Page {
         anchors.fill: parent
         model: App.vaultModel
 
+        // The model sorts favourites first; headers only make sense when
+        // both groups exist, so they collapse when nothing is a favourite.
+        section.property: "favorite"
+        section.delegate: SectionHeader {
+            visible: listView.model.hasFavorites
+            height: visible ? Theme.itemSizeSmall : 0
+            text: section === "true" ? qsTr("Favourites") : qsTr("Other items")
+        }
+
         header: Column {
             width: listView.width
 
@@ -48,8 +67,22 @@ Page {
                 width: parent.width
                 placeholderText: qsTr("Search vault")
                 inputMethodHints: Qt.ImhNoPredictiveText
+                // Keep the keyboard up when focus would drift while the
+                // list refilters underneath (the model emits row-level
+                // updates, never a reset, for the same reason).
+                focusOutBehavior: FocusBehavior.KeepFocus
                 onTextChanged: {
                     page.searchText = text
+                    if (text.length === 0) {
+                        searchDebounce.stop()
+                        App.vaultModel.setSearchQuery("")
+                    } else {
+                        searchDebounce.restart()
+                    }
+                }
+                EnterKey.iconSource: "image://theme/icon-m-enter-close"
+                EnterKey.onClicked: {
+                    searchDebounce.stop()
                     App.vaultModel.setSearchQuery(text)
                 }
             }
@@ -161,7 +194,9 @@ Page {
                     uri: model.uri,
                     cipherType: model.cipherType,
                     hasTotp: model.hasTotp,
-                    hasPassword: model.hasPassword
+                    hasPassword: model.hasPassword,
+                    hasNotes: model.hasNotes,
+                    hasDetails: model.hasDetails
                 })
             }
         }

@@ -86,6 +86,10 @@ struct DecryptedItem {
     QString primaryUri;  // logins only
     bool hasTotp = false;
     bool hasPassword = false;
+    // Existence flags only — whether encrypted payloads are present, never
+    // their contents.
+    bool hasNotes = false;
+    bool hasDetails = false;
 };
 
 } // namespace Vault
