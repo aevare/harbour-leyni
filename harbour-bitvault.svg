@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="86"
+   height="86"
+   viewBox="0 0 86 86"
+   version="1.1"
+   id="svg14"
+   sodipodi:docname="harbour-bitvault.svg"
+   inkscape:export-filename="../../sailfish-vault.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview14"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showguides="true"
+     inkscape:zoom="4.5961941"
+     inkscape:cx="71.689749"
+     inkscape:cy="37.204695"
+     inkscape:window-width="1657"
+     inkscape:window-height="1359"
+     inkscape:window-x="26"
+     inkscape:window-y="23"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg14">
+    <sodipodi:guide
+       position="43.0622,51.238281"
+       orientation="1,0"
+       id="guide14"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="43.737981,42.957933"
+       orientation="0,-1"
+       id="guide15"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2">
+    <linearGradient
+       id="linearGradient22"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#534054;stop-opacity:1;"
+         offset="0"
+         id="stop22" />
+      <stop
+         style="stop-color:#887b89;stop-opacity:1;"
+         offset="1"
+         id="stop23" />
+    </linearGradient>
+    <linearGradient
+       id="tile"
+       gradientUnits="userSpaceOnUse"
+       x1="8"
+       y1="80"
+       x2="78"
+       y2="6">
+      <stop
+         offset="0"
+         stop-color="#1246BE"
+         id="stop1"
+         style="stop-color:#534054;stop-opacity:1;" />
+      <stop
+         offset="1"
+         stop-color="#2E77EF"
+         id="stop2"
+         style="stop-color:#887b89;stop-opacity:1;" />
+    </linearGradient>
+    <clipPath
+       id="round">
+      <circle
+         cx="43"
+         cy="43"
+         r="43"
+         id="circle2" />
+    </clipPath>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient22"
+       id="linearGradient23"
+       x1="61.354446"
+       y1="16.787134"
+       x2="24.645554"
+       y2="69.212868"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <circle
+     cx="43"
+     cy="43"
+     r="43"
+     fill="url(#tile)"
+     id="circle3"
+     style="stroke:none" />
+  <g
+     clip-path="url(#round)"
+     id="g5"
+     style="display:none">
+    <circle
+       cx="64"
+       cy="16"
+       r="44"
+       fill="#5a93f7"
+       opacity="0.42"
+       id="circle4"
+       style="display:inline" />
+    <circle
+       cx="20"
+       cy="78"
+       r="42"
+       fill="#0c3276"
+       opacity="0.4"
+       id="circle5"
+       style="display:inline" />
+  </g>
+  <circle
+     cx="43"
+     cy="43"
+     r="32"
+     fill="#f3f6f9"
+     id="circle6"
+     style="display:inline;fill:url(#linearGradient23);fill-opacity:1;stroke:none" />
+  <circle
+     cx="43"
+     cy="43"
+     fill="#175ddc"
+     id="circle13"
+     r="10.821343"
+     style="display:inline;mix-blend-mode:soft-light;fill:#f0ebf1;fill-opacity:1;stroke:none;stroke-width:0;stroke-dasharray:none;stroke-opacity:1" />
+  <circle
+     style="display:inline;fill:#f0ebf1;fill-opacity:1;stroke:none;stroke-width:0;stroke-dasharray:none;stroke-opacity:1"
+     id="path18"
+     cx="43.03846"
+     cy="42.96154"
+     r="4.5384617" />
+  <g
+     stroke="#175ddc"
+     stroke-width="4"
+     stroke-linecap="round"
+     id="g13"
+     transform="matrix(1.191932,0,0,1.191932,-8.2530745,-8.2530745)"
+     style="display:inline;mix-blend-mode:normal;stroke:#f0ebf1;stroke-width:4.60985;stroke-dasharray:none;stroke-opacity:1">
+    <line
+       x1="52"
+       y1="43"
+       x2="63"
+       y2="43"
+       id="line8"
+       style="stroke:#f0ebf1;stroke-width:4.60985;stroke-dasharray:none;stroke-opacity:1" />
+    <line
+       x1="47.5"
+       y1="50.790001"
+       x2="53"
+       y2="60.32"
+       id="line9"
+       style="stroke:#f0ebf1;stroke-width:4.60985;stroke-dasharray:none;stroke-opacity:1" />
+    <line
+       x1="38.5"
+       y1="50.790001"
+       x2="33"
+       y2="60.32"
+       id="line10"
+       style="stroke:#f0ebf1;stroke-width:4.60985;stroke-dasharray:none;stroke-opacity:1" />
+    <line
+       x1="34"
+       y1="43"
+       x2="23"
+       y2="43"
+       id="line11"
+       style="stroke:#f0ebf1;stroke-width:4.60985;stroke-dasharray:none;stroke-opacity:1" />
+    <line
+       x1="38.5"
+       y1="35.209999"
+       x2="33"
+       y2="25.68"
+       id="line12"
+       style="stroke:#f0ebf1;stroke-width:4.60985;stroke-dasharray:none;stroke-opacity:1" />
+    <line
+       x1="47.5"
+       y1="35.209999"
+       x2="53"
+       y2="25.68"
+       id="line13"
+       style="stroke:#f0ebf1;stroke-width:4.60985;stroke-dasharray:none;stroke-opacity:1" />
+  </g>
+</svg>
