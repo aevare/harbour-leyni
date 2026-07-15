@@ -24,8 +24,8 @@ Goal: an empty app that builds, packages, and has CI proving it.
       Fedora-style form the Sailfish rpmlint allowlist requires)
 - [x] Scaffold the project: CMake template, `rpm/harbour-bitvault.spec`,
       `.desktop` with `[X-Sailjail] Permissions=Internet`, stub icons (86/108/128/172 px)
-- [ ] `git init` done; **still open: publish the repository publicly on GitHub**
-      (repo URL in spec/README assumes `github.com/aevare/harbour-bitvault` — fix if different)
+- [x] `git init` done; repository public at `github.com/aevare/harbour-bitvault`
+      (matches the URL assumed in spec/README; verified reachable 2026-07-15)
 - [x] CI workflow 1: SFOS RPM matrix build (4.5/4.6/5.0 × armv7hl + aarch64) via
       `CODeRUS/github-sfos-build` — written; proven on first push
 - [x] CI workflow 2: plain-Linux build of `src/crypto/` + unit tests — verified locally
@@ -163,12 +163,20 @@ Goal: earn the trust the project promises, then ship.
 
 - [ ] UX polish pass from Phase 4 device testing (owner: collect concrete annoyances
       on-device; nothing security-relevant)
-- [ ] Write `SECURITY.md` (repo root): threat model, key lifecycle, what is stored where,
-      platform limitations, how to report vulnerabilities
-- [ ] Self-audit pass against the architecture rules (no secret ever crosses into `ui/`;
-      grep for `QString` in crypto paths)
-- [ ] Sailjail trace run: confirm the app functions with `Internet` permission only
-- [ ] Harbour validation (`rpmvalidation`), fix findings
+- [x] Write `SECURITY.md` (repo root): threat model, key lifecycle, what is stored where,
+      platform limitations, how to report vulnerabilities (2026-07-15)
+- [x] Self-audit pass against the architecture rules (no secret ever crosses into `ui/`;
+      grep for `QString` in crypto paths) — passed 2026-07-15: layering includes all
+      one-way, crypto Qt-free, no TLS overrides, no logging anywhere in `src/`, QML
+      presentation-only. One minor improvement noted: `AppController::m_clipboardExpected`
+      retains the last-copied secret in a `QString` for the clear-timeout window
+      (indefinitely if the timeout is 0); comparing a hash instead would drop it sooner.
+- [x] Sailjail trace run: confirmed on device — the app functions with `Internet`
+      permission only (2026-07-15)
+- [x] Harbour validation (`rpmvalidation` v1.104, SailfishOS-5.0.0.43-aarch64 target):
+      **all suites PASSED**, no findings to fix (2026-07-15). One cosmetic warning —
+      unstripped binary — which disappears when the release RPMs are built with `-d`
+      (stripped main package + separate -debuginfo/-debugsource); do that for v0.1.0.
 - [ ] Tag v0.1.0 → GitHub release with RPMs; submit to OBS + Chum; OpenRepos upload
 - [ ] Announce beta on the Sailfish forum, explicitly inviting code review
 
