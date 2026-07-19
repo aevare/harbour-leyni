@@ -156,6 +156,11 @@ Page {
                 text: qsTr("Lock now")
                 onClicked: App.lock()
             }
+            MenuItem {
+                text: qsTr("New item")
+                onClicked: pageStack.push(Qt.resolvedUrl("ItemEditPage.qml"),
+                                          { mode: "create" })
+            }
         }
 
         delegate: ListItem {
@@ -224,6 +229,8 @@ Page {
                     username: model.username,
                     uri: model.uri,
                     cipherType: model.cipherType,
+                    folderId: model.folderId,
+                    favorite: model.favorite,
                     hasTotp: model.hasTotp,
                     hasPassword: model.hasPassword,
                     hasNotes: model.hasNotes,

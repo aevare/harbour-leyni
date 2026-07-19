@@ -712,6 +712,164 @@ void AppController::refreshAndSync(bool freshLogin)
     });
 }
 
+void AppController::writeAndResync(const CipherWriteCall &doWrite,
+                                   const QString &successMessage)
+{
+    if (m_accessToken.isEmpty()) {
+        // No live session token (e.g. unlocked offline from the local blob):
+        // get one from the refresh token before writing.
+        refreshThenWrite(doWrite, successMessage);
+        return;
+    }
+    // Use the current access token. A freshly-logged-in session is valid even
+    // when the server issued no refresh token.
+    doWrite(m_accessToken, [this, doWrite, successMessage](
+                               Api::Result<QByteArray> writeResult) {
+        if (!writeResult.ok()
+                && (writeResult.error.httpStatus == 401
+                    || writeResult.error.httpStatus == 403)) {
+            // Access token expired mid-session — refresh once and retry.
+            refreshThenWrite(doWrite, successMessage);
+            return;
+        }
+        finishWrite(writeResult, successMessage);
+    });
+}
+
+void AppController::refreshThenWrite(const CipherWriteCall &doWrite,
+                                     const QString &successMessage)
+{
+    if (m_refreshToken.isEmpty()) {
+        setBusy(false);
+        emit notify(QStringLiteral("Not signed in — Sync or sign in again"));
+        return;
+    }
+    m_api.refreshToken(m_refreshToken, [this, doWrite, successMessage](
+                                           Api::Result<Api::TokenResponse> r) {
+        if (!r.ok()) {
+            setBusy(false);
+            emit notify(QStringLiteral("Session expired — sign in again"));
+            return;
+        }
+        m_accessToken = r.value.accessToken;
+        if (!r.value.refreshToken.isEmpty()) {
+            m_refreshToken = r.value.refreshToken;
+            m_settings.setValue(QLatin1String(kSettingRefreshToken),
+                                m_refreshToken);
+        }
+        doWrite(m_accessToken, [this, successMessage](
+                                   Api::Result<QByteArray> writeResult) {
+            finishWrite(writeResult, successMessage);
+        });
+    });
+}
+
+void AppController::finishWrite(const Api::Result<QByteArray> &writeResult,
+                                const QString &successMessage)
+{
+    if (!writeResult.ok()) {
+        setBusy(false);
+        emit notify(writeResult.error.message.isEmpty()
+                        ? QStringLiteral("Save failed")
+                        : writeResult.error.message);
+        return;
+    }
+    // Pull the server's canonical state rather than patching locally.
+    m_api.sync(m_accessToken, [this, successMessage](
+                                  Api::Result<QByteArray> syncResult) {
+        setBusy(false);
+        if (!syncResult.ok()) {
+            emit notify(QStringLiteral("Saved — sync failed, pull to refresh"));
+            return;
+        }
+        applyWriteSync(syncResult.value, successMessage);
+    });
+}
+
+void AppController::applyWriteSync(const QByteArray &blob,
+                                   const QString &successMessage)
+{
+    if (!m_syncStore.save(blob)) {
+        emit notify(QStringLiteral("Warning: could not store vault locally"));
+    }
+    QString error;
+    if (m_vault.reloadSync(blob, &error)) {
+        m_model.refresh();
+        emit vaultChanged();
+        emit notify(successMessage);
+    } else {
+        // profileKey changed (password rotated elsewhere) — must re-unlock.
+        setState(QStringLiteral("locked"));
+        setError(error);
+    }
+}
+
+void AppController::createItem(int type, const QVariantMap &fields)
+{
+    if (m_state != QLatin1String("unlocked")) {
+        emit notify(QStringLiteral("Unlock the vault first"));
+        return;
+    }
+    QString error;
+    const QByteArray body = m_vault.buildCreateBody(
+        static_cast<Vault::CipherType>(type), fields, &error);
+    if (body.isEmpty()) {
+        emit notify(error.isEmpty() ? QStringLiteral("Could not build item")
+                                    : error);
+        return;
+    }
+    noteActivity();
+    setError(QString());
+    setBusy(true);
+    writeAndResync(
+        [this, body](const QByteArray &token,
+                     std::function<void(Api::Result<QByteArray>)> done) {
+            m_api.createCipher(token, body, done);
+        },
+        QStringLiteral("Item created"));
+}
+
+void AppController::saveItem(const QString &itemId, const QVariantMap &fields)
+{
+    if (m_state != QLatin1String("unlocked")) {
+        emit notify(QStringLiteral("Unlock the vault first"));
+        return;
+    }
+    QString error;
+    const QByteArray body = m_vault.buildUpdateBody(itemId, fields, &error);
+    if (body.isEmpty()) {
+        emit notify(error.isEmpty() ? QStringLiteral("Could not build item")
+                                    : error);
+        return;
+    }
+    noteActivity();
+    setError(QString());
+    setBusy(true);
+    writeAndResync(
+        [this, itemId, body](const QByteArray &token,
+                             std::function<void(Api::Result<QByteArray>)> done) {
+            m_api.updateCipher(token, itemId, body, done);
+        },
+        QStringLiteral("Item saved"));
+}
+
+void AppController::deleteItem(const QString &itemId)
+{
+    if (m_state != QLatin1String("unlocked")) {
+        emit notify(QStringLiteral("Unlock the vault first"));
+        return;
+    }
+    noteActivity();
+    setError(QString());
+    setBusy(true);
+    writeAndResync(
+        [this, itemId](const QByteArray &token,
+                       std::function<void(Api::Result<QByteArray>)> done) {
+            m_api.softDeleteCipher(token, itemId, done);
+        },
+        QStringLiteral("Item deleted"));
+}
+
 void AppController::signOut()
 {
     m_vault.lock();
@@ -740,6 +898,17 @@ QString AppController::itemNotes(const QString &itemId)
     QString error;
     noteActivity();
     return m_vault.itemNotes(itemId, &error);
+}
+
+QString AppController::itemTotpSecret(const QString &itemId)
+{
+    QString error;
+    noteActivity();
+    const QString secret = m_vault.itemTotpSecret(itemId, &error);
+    if (!error.isEmpty()) {
+        setError(error);
+    }
+    return secret;
 }
 
 QVariantList AppController::itemDetailFields(const QString &itemId)

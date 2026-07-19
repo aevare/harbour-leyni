@@ -110,6 +110,14 @@ Handling rules, enforced by types rather than convention:
   The encrypted sync blob may stay in memory; it is ciphertext.
 - There is no logging of any kind in the application source — nothing can
   leak through the journal.
+- **Writes** (create/edit/delete) run the same trust boundary in reverse:
+  plaintext the user types is encrypted into EncStrings in `src/vault/`
+  (`buildCreateBody`/`buildUpdateBody`) before it reaches the API layer, which
+  only ever transmits ciphertext. Edits start from the item's original
+  ciphertext and overwrite just the changed fields, so unmodeled data (password
+  history, custom fields) is preserved without ever being decrypted. After a
+  write the app re-syncs; the on-disk blob is only ever the server's E2E-
+  encrypted response, never a locally-assembled one.
 
 ## What is stored where
 

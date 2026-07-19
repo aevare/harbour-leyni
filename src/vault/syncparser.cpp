@@ -47,6 +47,7 @@ bool parseCipher(const QJsonObject &obj, EncryptedCipher *out)
     }
     out->id = id;
     out->type = static_cast<CipherType>(type);
+    out->raw = obj; // kept verbatim for faithful edits (see cipheritem.h)
     out->folderId = valueOf(obj, QStringLiteral("folderId")).toString();
     out->organizationId =
         valueOf(obj, QStringLiteral("organizationId")).toString();
@@ -172,8 +173,22 @@ bool parseSyncJson(const QByteArray &json, SyncData *out,
     if (ciphersValue.isArray()) {
         const QJsonArray ciphers = ciphersValue.toArray();
         for (const QJsonValue &entry : ciphers) {
+            if (!entry.isObject()) {
+                if (skippedCiphers != nullptr) {
+                    ++*skippedCiphers;
+                }
+                continue;
+            }
+            const QJsonObject cipherObj = entry.toObject();
+            // Soft-deleted (Trash) items carry a non-null deletedDate; hide
+            // them from the vault without counting them as parse failures.
+            const QJsonValue deleted =
+                valueOf(cipherObj, QStringLiteral("deletedDate"));
+            if (deleted.isString() && !deleted.toString().isEmpty()) {
+                continue;
+            }
             EncryptedCipher cipher;
-            if (entry.isObject() && parseCipher(entry.toObject(), &cipher)) {
+            if (parseCipher(cipherObj, &cipher)) {
                 out->ciphers.push_back(cipher);
             } else if (skippedCiphers != nullptr) {
                 ++*skippedCiphers;

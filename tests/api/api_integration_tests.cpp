@@ -35,11 +35,14 @@
 #include <QTimer>
 #include <QUrl>
 #include <QUuid>
+#include <QVariantMap>
 
 #include "apiclient.h"
 #include "apijson.h"
+#include "cipheritem.h"
 #include "serverconfig.h"
 #include "syncstore.h"
+#include "vault.h"
 
 #include "base64.h"
 #include "crypto.h"
@@ -428,6 +431,130 @@ int main(int argc, char *argv[])
         CHECK(!syncTimedOut);
         CHECK(syncResult.ok());
         std::printf("sync with refreshed token: OK\n");
+    }
+
+    // --- j. write round-trip: create → edit → soft-delete, via the real
+    // Vault build methods and ApiClient cipher calls. Proves the write path
+    // interoperates with the server and stays decryptable. ---
+    {
+        auto findItem = [](const BitVault::Vault::Vault &v, const QString &name)
+            -> const BitVault::Vault::DecryptedItem * {
+            for (const BitVault::Vault::DecryptedItem &it : v.items()) {
+                if (it.name == name) {
+                    return &it;
+                }
+            }
+            return nullptr;
+        };
+        auto resync = [&](BitVault::Vault::Vault *v) {
+            bool to = false;
+            Result<QByteArray> s = waitFor<QByteArray>(
+                [&](std::function<void(Result<QByteArray>)> cb) {
+                    client.sync(accessToken, cb);
+                },
+                &to);
+            CHECK(!to);
+            CHECK(s.ok());
+            QString err;
+            CHECK(v->reloadSync(s.value, &err));
+        };
+
+        // A vault unlocked from the account's own master key.
+        BitVault::Vault::Vault vault;
+        {
+            bool to = false;
+            Result<QByteArray> s = waitFor<QByteArray>(
+                [&](std::function<void(Result<QByteArray>)> cb) {
+                    client.sync(accessToken, cb);
+                },
+                &to);
+            CHECK(!to);
+            CHECK(s.ok());
+            QString err;
+            CHECK(vault.loadSync(s.value, &err));
+            CHECK(vault.unlockWithMasterKey(
+                SecureBytes(masterKey.data(), masterKey.size()), &err));
+        }
+
+        // create
+        QVariantMap fields;
+        fields.insert(QStringLiteral("name"), QStringLiteral("IT Login"));
+        fields.insert(QStringLiteral("username"), QStringLiteral("it@x.test"));
+        fields.insert(QStringLiteral("password"), QStringLiteral("itpw-1"));
+        fields.insert(QStringLiteral("uri"), QStringLiteral("https://it.test"));
+        fields.insert(QStringLiteral("totp"), QString());
+        fields.insert(QStringLiteral("notes"), QStringLiteral("it note"));
+        fields.insert(QStringLiteral("favorite"), false);
+        fields.insert(QStringLiteral("folderId"), QString());
+
+        QString buildErr;
+        const QByteArray createBody = vault.buildCreateBody(
+            BitVault::Vault::CipherType::Login, fields, &buildErr);
+        CHECK(!createBody.isEmpty());
+        {
+            bool to = false;
+            Result<QByteArray> r = waitFor<QByteArray>(
+                [&](std::function<void(Result<QByteArray>)> cb) {
+                    client.createCipher(accessToken, createBody, cb);
+                },
+                &to);
+            CHECK(!to);
+            CHECK(r.ok());
+        }
+        resync(&vault);
+        const BitVault::Vault::DecryptedItem *created =
+            findItem(vault, QStringLiteral("IT Login"));
+        CHECK(created != nullptr);
+        CHECK(created->username == QStringLiteral("it@x.test"));
+        const QString cipherId = created->id;
+        {
+            QString err;
+            CHECK(vault.itemPassword(cipherId, &err) == QStringLiteral("itpw-1"));
+        }
+        std::printf("create cipher: OK\n");
+
+        // edit
+        fields.insert(QStringLiteral("name"), QStringLiteral("IT Login v2"));
+        fields.insert(QStringLiteral("password"), QStringLiteral("itpw-2"));
+        const QByteArray updateBody =
+            vault.buildUpdateBody(cipherId, fields, &buildErr);
+        CHECK(!updateBody.isEmpty());
+        {
+            bool to = false;
+            Result<QByteArray> r = waitFor<QByteArray>(
+                [&](std::function<void(Result<QByteArray>)> cb) {
+                    client.updateCipher(accessToken, cipherId, updateBody, cb);
+                },
+                &to);
+            CHECK(!to);
+            CHECK(r.ok());
+        }
+        resync(&vault);
+        CHECK(findItem(vault, QStringLiteral("IT Login")) == nullptr);
+        const BitVault::Vault::DecryptedItem *edited =
+            findItem(vault, QStringLiteral("IT Login v2"));
+        CHECK(edited != nullptr);
+        {
+            QString err;
+            CHECK(vault.itemPassword(edited->id, &err)
+                  == QStringLiteral("itpw-2"));
+        }
+        std::printf("update cipher: OK\n");
+
+        // soft delete
+        {
+            bool to = false;
+            Result<QByteArray> r = waitFor<QByteArray>(
+                [&](std::function<void(Result<QByteArray>)> cb) {
+                    client.softDeleteCipher(accessToken, cipherId, cb);
+                },
+                &to);
+            CHECK(!to);
+            CHECK(r.ok());
+        }
+        resync(&vault);
+        CHECK(findItem(vault, QStringLiteral("IT Login v2")) == nullptr);
+        std::printf("soft-delete cipher: OK (hidden from vault)\n");
     }
 
     std::printf("api_integration_tests: all checks passed\n");

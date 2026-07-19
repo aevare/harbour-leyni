@@ -65,11 +65,32 @@ public:
                             const QString &deviceIdentifier,
                             std::function<void(Result<QByteArray>)> callback);
 
+    // Cipher writes (Bearer-authenticated, same host as sync). The body is
+    // the already-encrypted CipherRequestModel JSON built by the vault layer;
+    // this class never sees plaintext. The raw response body is returned but
+    // the caller normally discards it and re-syncs. See doc/PROTOCOL.md.
+    void createCipher(const QByteArray &accessToken, const QByteArray &body,
+                      std::function<void(Result<QByteArray>)> callback);
+    void updateCipher(const QByteArray &accessToken, const QString &id,
+                      const QByteArray &body,
+                      std::function<void(Result<QByteArray>)> callback);
+    // Soft delete: moves the item to Trash (recoverable from the web vault).
+    // It is a PUT to /ciphers/{id}/delete with no body, not an HTTP DELETE.
+    void softDeleteCipher(const QByteArray &accessToken, const QString &id,
+                          std::function<void(Result<QByteArray>)> callback);
+
 private:
     void postToken(const QByteArray &body, const QString &authEmail,
                    std::function<void(Result<TokenResponse>)> callback);
     QNetworkReply *post(const QString &url, const QByteArray &body,
                         const char *contentType, const QByteArray &authEmail);
+    // Sends a Bearer-authenticated request (verb "POST" or "PUT") and delivers
+    // the raw response body, accepting any 2xx status. A JSON Content-Type is
+    // set when the body is non-empty.
+    void sendAuthed(const QString &url, const QByteArray &verb,
+                    const QByteArray &accessToken, const QByteArray &body,
+                    const QString &opName,
+                    std::function<void(Result<QByteArray>)> callback);
 
     ServerConfig m_config;
     QNetworkAccessManager *m_network;

@@ -17,6 +17,7 @@
 #include <QSet>
 #include <QString>
 #include <QTimer>
+#include <QVariantMap>
 
 #include "cipheritem.h"
 #include "kdf.h"
@@ -399,6 +400,253 @@ void testReloadSync(const QByteArray &fixtureJson)
     CHECK(!vault.reloadSync(fixtureJson, &error));
 }
 
+bool unlockFixtureVault(Vault *vault, const QByteArray &syncJson)
+{
+    QString error;
+    if (!vault->loadSync(syncJson, &error)) {
+        return false;
+    }
+    return vault->unlock(QStringLiteral("fixture@bitvault.test"),
+                         toSecureBytes("FixtureVault123!"), fixtureKdf(),
+                         &error);
+}
+
+// Wraps a write-body (CipherRequestModel JSON) as a single-cipher sync
+// response for the fixture account, so the audited read path can decrypt it
+// back and prove the write path encrypted under the right key.
+QByteArray wrapBodyAsSync(const QByteArray &fixtureJson,
+                          const QByteArray &body, const QString &id)
+{
+    QJsonObject root = QJsonDocument::fromJson(fixtureJson).object();
+    QJsonObject cipher = QJsonDocument::fromJson(body).object();
+    cipher.insert(QStringLiteral("id"), id);
+    QJsonArray ciphers;
+    ciphers.append(cipher);
+    root.insert(QStringLiteral("ciphers"), ciphers);
+    return QJsonDocument(root).toJson(QJsonDocument::Compact);
+}
+
+// The fixture cipher id whose decrypted name matches `name`.
+QString cipherIdForName(const QByteArray &fixtureJson, const QString &name)
+{
+    Vault vault;
+    if (!unlockFixtureVault(&vault, fixtureJson)) {
+        return QString();
+    }
+    const DecryptedItem *item = findByName(vault.items(), name);
+    return item ? item->id : QString();
+}
+
+void testBuildCreateBodyLogin(const QByteArray &fixtureJson)
+{
+    Vault vault;
+    QString error;
+    CHECK(unlockFixtureVault(&vault, fixtureJson));
+
+    QVariantMap fields;
+    fields.insert(QStringLiteral("name"), QStringLiteral("Created Login"));
+    fields.insert(QStringLiteral("username"),
+                  QStringLiteral("newuser@example.com"));
+    fields.insert(QStringLiteral("password"), QStringLiteral("cr3ated-pw"));
+    fields.insert(QStringLiteral("uri"), QStringLiteral("https://new.test"));
+    fields.insert(QStringLiteral("totp"), QStringLiteral("JBSWY3DPEHPK3PXP"));
+    fields.insert(QStringLiteral("notes"), QStringLiteral("created notes"));
+    fields.insert(QStringLiteral("favorite"), true);
+    fields.insert(QStringLiteral("folderId"), QString());
+
+    const QByteArray body =
+        vault.buildCreateBody(CipherType::Login, fields, &error);
+    CHECK(!body.isEmpty());
+
+    const QJsonObject obj = QJsonDocument::fromJson(body).object();
+    CHECK(obj.value(QStringLiteral("type")).toInt() == 1);
+    CHECK(obj.value(QStringLiteral("name")).toString().startsWith(
+        QStringLiteral("2.")));               // encrypted, not plaintext
+    CHECK(obj.value(QStringLiteral("folderId")).isNull());
+    CHECK(obj.value(QStringLiteral("organizationId")).isNull());
+    CHECK(obj.value(QStringLiteral("favorite")).toBool());
+
+    // Round-trip through the read path: everything decrypts to what we put in.
+    Vault v2;
+    CHECK(unlockFixtureVault(
+        &v2, wrapBodyAsSync(fixtureJson, body, QStringLiteral("new-login-1"))));
+    const DecryptedItem *item =
+        findByName(v2.items(), QStringLiteral("Created Login"));
+    CHECK(item != nullptr);
+    CHECK(item->username == QStringLiteral("newuser@example.com"));
+    CHECK(item->primaryUri == QStringLiteral("https://new.test"));
+    CHECK(item->favorite);
+    QString err;
+    CHECK(v2.itemPassword(item->id, &err) == QStringLiteral("cr3ated-pw"));
+    CHECK(v2.itemNotes(item->id, &err) == QStringLiteral("created notes"));
+    CHECK(v2.itemTotpSecret(item->id, &err)
+          == QStringLiteral("JBSWY3DPEHPK3PXP"));
+    std::printf("buildCreateBody (login): OK\n");
+}
+
+void testBuildCreateBodyNote(const QByteArray &fixtureJson)
+{
+    Vault vault;
+    QString error;
+    CHECK(unlockFixtureVault(&vault, fixtureJson));
+
+    QVariantMap fields;
+    fields.insert(QStringLiteral("name"), QStringLiteral("Created Note"));
+    fields.insert(QStringLiteral("notes"), QStringLiteral("a secret memo"));
+    fields.insert(QStringLiteral("favorite"), false);
+    fields.insert(QStringLiteral("folderId"), QString());
+
+    const QByteArray body =
+        vault.buildCreateBody(CipherType::SecureNote, fields, &error);
+    CHECK(!body.isEmpty());
+    const QJsonObject obj = QJsonDocument::fromJson(body).object();
+    CHECK(obj.value(QStringLiteral("type")).toInt() == 2);
+    CHECK(obj.value(QStringLiteral("secureNote")).toObject()
+              .value(QStringLiteral("type")).toInt() == 0);
+
+    Vault v2;
+    CHECK(unlockFixtureVault(
+        &v2, wrapBodyAsSync(fixtureJson, body, QStringLiteral("new-note-1"))));
+    const DecryptedItem *item =
+        findByName(v2.items(), QStringLiteral("Created Note"));
+    CHECK(item != nullptr);
+    CHECK(item->type == CipherType::SecureNote);
+    QString err;
+    CHECK(v2.itemNotes(item->id, &err) == QStringLiteral("a secret memo"));
+    std::printf("buildCreateBody (note): OK\n");
+}
+
+// Edit must overwrite the changed fields yet preserve everything the app does
+// not model. Inject a custom field, a passwordHistory entry, and a second URI
+// into a fixture login, then assert they survive an edit that renames it.
+void testBuildUpdateBodyPreserves(const QByteArray &fixtureJson)
+{
+    const QString id = cipherIdForName(fixtureJson,
+                                       QStringLiteral("Example Login"));
+    CHECK(!id.isEmpty());
+
+    // Add unmodeled data to that cipher's sync JSON (dummy EncStrings — never
+    // decrypted, only carried through).
+    QJsonObject root = QJsonDocument::fromJson(fixtureJson).object();
+    QJsonArray ciphers = root.value(QStringLiteral("ciphers")).toArray();
+    for (int i = 0; i < ciphers.size(); ++i) {
+        QJsonObject c = ciphers.at(i).toObject();
+        if (c.value(QStringLiteral("id")).toString() != id) {
+            continue;
+        }
+        QJsonObject field;
+        field.insert(QStringLiteral("name"), QStringLiteral("2.aa|bb|cc"));
+        field.insert(QStringLiteral("value"), QStringLiteral("2.dd|ee|ff"));
+        field.insert(QStringLiteral("type"), 1);
+        QJsonArray fields;
+        fields.append(field);
+        c.insert(QStringLiteral("fields"), fields);
+
+        QJsonObject histEntry;
+        histEntry.insert(QStringLiteral("password"),
+                         QStringLiteral("2.gg|hh|ii"));
+        histEntry.insert(QStringLiteral("lastUsedDate"),
+                         QStringLiteral("2020-01-01T00:00:00Z"));
+        QJsonArray history;
+        history.append(histEntry);
+        c.insert(QStringLiteral("passwordHistory"), history);
+
+        QJsonObject login = c.value(QStringLiteral("login")).toObject();
+        QJsonArray uris = login.value(QStringLiteral("uris")).toArray();
+        QJsonObject extraUri;
+        extraUri.insert(QStringLiteral("uri"), QStringLiteral("2.jj|kk|ll"));
+        extraUri.insert(QStringLiteral("match"), 3);
+        uris.append(extraUri);          // second URI, must be preserved
+        login.insert(QStringLiteral("uris"), uris);
+        c.insert(QStringLiteral("login"), login);
+
+        c.insert(QStringLiteral("revisionDate"),
+                 QStringLiteral("2021-05-05T10:00:00Z"));
+        ciphers.replace(i, c);
+        break;
+    }
+    root.insert(QStringLiteral("ciphers"), ciphers);
+    const QByteArray injected = QJsonDocument(root).toJson(QJsonDocument::Compact);
+
+    Vault vault;
+    QString error;
+    CHECK(unlockFixtureVault(&vault, injected));
+
+    QVariantMap fields;
+    fields.insert(QStringLiteral("name"), QStringLiteral("Renamed Login"));
+    fields.insert(QStringLiteral("username"),
+                  QStringLiteral("alice@example.com"));
+    fields.insert(QStringLiteral("password"), QStringLiteral("changed-pw"));
+    fields.insert(QStringLiteral("uri"), QStringLiteral("https://changed.test"));
+    fields.insert(QStringLiteral("totp"), QString());
+    fields.insert(QStringLiteral("notes"), QString());
+    fields.insert(QStringLiteral("favorite"), false);
+    fields.insert(QStringLiteral("folderId"), QString());
+
+    const QByteArray body = vault.buildUpdateBody(id, fields, &error);
+    CHECK(!body.isEmpty());
+    const QJsonObject obj = QJsonDocument::fromJson(body).object();
+
+    // Response-only keys stripped.
+    CHECK(!obj.contains(QStringLiteral("id")));
+    CHECK(!obj.contains(QStringLiteral("object")));
+    CHECK(!obj.contains(QStringLiteral("revisionDate")));
+    // Concurrency hint carries the original revision.
+    CHECK(obj.value(QStringLiteral("lastKnownRevisionDate")).toString()
+          == QStringLiteral("2021-05-05T10:00:00Z"));
+
+    // Unmodeled data preserved verbatim.
+    const QJsonArray keptFields = obj.value(QStringLiteral("fields")).toArray();
+    CHECK(keptFields.size() == 1);
+    CHECK(keptFields.at(0).toObject().value(QStringLiteral("value")).toString()
+          == QStringLiteral("2.dd|ee|ff"));
+    CHECK(obj.value(QStringLiteral("passwordHistory")).toArray().size() == 1);
+
+    const QJsonArray keptUris =
+        obj.value(QStringLiteral("login")).toObject()
+            .value(QStringLiteral("uris")).toArray();
+    CHECK(keptUris.size() == 2);
+    CHECK(keptUris.at(1).toObject().value(QStringLiteral("uri")).toString()
+          == QStringLiteral("2.jj|kk|ll"));                 // extra URI kept
+    CHECK(keptUris.at(0).toObject().value(QStringLiteral("uri")).toString()
+          != QStringLiteral("2.jj|kk|ll"));                 // primary rewritten
+
+    // The edited values decrypt back correctly.
+    Vault v2;
+    CHECK(unlockFixtureVault(
+        &v2, wrapBodyAsSync(injected, body, id)));
+    const DecryptedItem *item =
+        findByName(v2.items(), QStringLiteral("Renamed Login"));
+    CHECK(item != nullptr);
+    CHECK(item->primaryUri == QStringLiteral("https://changed.test"));
+    QString err;
+    CHECK(v2.itemPassword(item->id, &err) == QStringLiteral("changed-pw"));
+    std::printf("buildUpdateBody (preserves unmodeled fields): OK\n");
+}
+
+void testSoftDeletedSkipped(const QByteArray &fixtureJson)
+{
+    QJsonObject root = QJsonDocument::fromJson(fixtureJson).object();
+    QJsonArray ciphers = root.value(QStringLiteral("ciphers")).toArray();
+    const int before = ciphers.size();
+    CHECK(before >= 1);
+    // Mark the first cipher as trashed.
+    QJsonObject first = ciphers.at(0).toObject();
+    first.insert(QStringLiteral("deletedDate"),
+                 QStringLiteral("2022-02-02T02:02:02Z"));
+    ciphers.replace(0, first);
+    root.insert(QStringLiteral("ciphers"), ciphers);
+    const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
+
+    SyncData data;
+    QString error;
+    int skipped = -1;
+    CHECK(parseSyncJson(json, &data, &error, &skipped));
+    CHECK(static_cast<int>(data.ciphers.size()) == before - 1); // trashed hidden
+    CHECK(skipped == 0); // hidden, not counted as a parse failure
+    std::printf("soft-deleted cipher hidden: OK\n");
+}
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -414,6 +662,10 @@ int main(int argc, char *argv[])
     testLockClearsStateAndSignals(fixtureJson);
     testAutoLock(fixtureJson);
     testReloadSync(fixtureJson);
+    testBuildCreateBodyLogin(fixtureJson);
+    testBuildCreateBodyNote(fixtureJson);
+    testBuildUpdateBodyPreserves(fixtureJson);
+    testSoftDeletedSkipped(fixtureJson);
 
     std::printf("vault_tests: all checks passed\n");
     return 0;

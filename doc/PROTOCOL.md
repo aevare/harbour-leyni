@@ -24,6 +24,9 @@ at `/identity/*` and `/api/*`. EU cloud uses `bitwarden.eu`.
 | KDF discovery | `POST /identity/accounts/prelogin` |
 | Login / token | `POST /identity/connect/token` |
 | Full vault | `GET /api/sync` |
+| Create item | `POST /api/ciphers` |
+| Edit item | `PUT /api/ciphers/{id}` |
+| Soft-delete item | `PUT /api/ciphers/{id}/delete` |
 
 ## Key derivation
 
@@ -88,6 +91,45 @@ a clear error rather than mis-decrypting.
 
 BitVault stores this response verbatim on disk (it is already E2E-encrypted) and
 decrypts only in memory after unlock.
+
+## Writes (create / edit / soft-delete)
+
+All three are Bearer-authenticated against the `/api` host (like sync), and carry
+a **CipherRequestModel** JSON body (except soft-delete, which has no body). Every
+sensitive field in the body is already an EncString — BitVault encrypts in the
+vault layer before the body reaches the transport.
+
+CipherRequestModel (camelCase), for the two types BitVault writes today:
+
+```
+{ "type": 1|2, "name": <EncString>, "notes": <EncString>|null,
+  "favorite": bool, "folderId": <uuid>|null, "organizationId": <uuid>|null,
+  // type 1:
+  "login": { "username": <EncString>|null, "password": <EncString>|null,
+             "totp": <EncString>|null, "uris": [ { "uri": <EncString>, "match": <int>|null } ] },
+  // type 2:
+  "secureNote": { "type": 0 },
+  // preserved verbatim on edit, not modeled by BitVault:
+  "fields": [...], "passwordHistory": [...],
+  "lastKnownRevisionDate": <iso8601>   // edit only, optimistic concurrency
+}
+```
+
+- **Create** (personal vault): `POST /api/ciphers`. New items are encrypted
+  directly under the user key — no per-item key.
+- **Edit**: `PUT /api/ciphers/{id}`. BitVault starts from the item's *original*
+  sync JSON, overwrites only the changed fields with freshly-encrypted EncStrings,
+  strips response-only keys (`id`, `object`, `revisionDate`, …), and sets
+  `lastKnownRevisionDate`. This preserves fields the client does not model
+  (password history, custom fields, extra URIs).
+- **Soft-delete**: `PUT /api/ciphers/{id}/delete` (a PUT, not an HTTP DELETE) —
+  moves the item to Trash, recoverable from the web vault. Trashed ciphers come
+  back in `/api/sync` with a non-null `deletedDate`; BitVault hides those.
+- After any write, BitVault re-syncs and reloads rather than patching local state.
+
+Not yet implemented: card/identity create/edit, organization-item creation,
+attachments, restore-from-trash. Request-model details verified against rbw and
+Vaultwarden (this file is a map, not a spec).
 
 ## TOTP
 

@@ -30,7 +30,7 @@ ApplicationWindow {
         case "login": return ["LoginPage.qml", "SetupPage.qml"]
         case "twofactor": return ["TwoFactorPage.qml"]
         case "locked": return ["UnlockPage.qml", "SettingsPage.qml"]
-        case "unlocked": return ["VaultPage.qml", "ItemDetailPage.qml", "SettingsPage.qml"]
+        case "unlocked": return ["VaultPage.qml", "ItemDetailPage.qml", "ItemEditPage.qml", "SettingsPage.qml"]
         default: return ["SetupPage.qml"]
         }
     }

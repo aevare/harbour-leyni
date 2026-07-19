@@ -30,6 +30,8 @@ src/crypto/
 └── encstring.{h,cpp}     parse/decrypt/encrypt "2.<iv>|<ct>|<mac>" strings
 ```
 
+`pinwrap.{h,cpp}` (opt-in PIN unlock) also lives here.
+
 Rules:
 
 - **Qt-free** (at most Qt Core), so it compiles and its tests run on plain Linux.
@@ -59,6 +61,18 @@ end-to-end encrypted by design. Nothing decrypted is ever written to disk. The b
 lives in the Sailjail-private data directory
 (`~/.local/share/<org>/harbour-bitvault/`), unreadable by other sandboxed apps.
 The app requests only the `Internet` permission.
+
+## Writes (create / edit / delete)
+
+Write support mirrors the read path in reverse, and the direction of trust is the
+same: **the plaintext→ciphertext transform is concentrated in `src/vault/`**, which
+owns the keys. The user types plaintext in QML; `src/ui/` hands it to the vault as a
+`QVariantMap`; the vault encrypts each field into an EncString and assembles the
+request-body JSON; `src/api/` is a dumb Bearer transport that ships those bytes. The
+API layer never sees plaintext, and no security decision lives in QML. After a
+successful write the app re-syncs and reloads — it never patches local state, so the
+on-disk blob stays byte-identical to what the server holds. See `doc/PROTOCOL.md`
+"Writes".
 
 ## QML rules
 
