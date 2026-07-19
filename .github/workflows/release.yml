@@ -1,0 +1,93 @@
+name: Release
+
+# Tag-driven release: push a tag like v0.1.0 (must match the spec Version) and
+# this builds stripped RPMs for the supported targets and publishes a GitHub
+# Release with them attached. The binaries are stripped by the `strip` step in
+# rpm/harbour-bitvault.spec, so no `mb2 -d` is needed here.
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Tag must match spec Version
+        run: |
+          spec_version=$(sed -n 's/^Version:[[:space:]]*//p' \
+              rpm/harbour-bitvault.spec | head -n1 | tr -d '[:space:]')
+          tag_version="${GITHUB_REF_NAME#v}"
+          echo "spec Version: $spec_version   tag: $GITHUB_REF_NAME"
+          if [ "$spec_version" != "$tag_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match spec Version" \
+                 "$spec_version (expected tag v$spec_version)"
+            exit 1
+          fi
+
+  build:
+    needs: verify
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Must match existing coderus/sailfishos-platform-sdk Docker tags.
+        release:
+          - 4.6.0.13
+          - 5.0.0.43
+        arch:
+          - armv7hl
+          - aarch64
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build stripped RPM
+        uses: CODeRUS/github-sfos-build@master
+        with:
+          release: ${{ matrix.release }}
+          arch: ${{ matrix.arch }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: rpm-${{ matrix.release }}-${{ matrix.arch }}
+          path: |
+            RPMS/*.rpm
+            RPMS/**/*.rpm
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all RPMs
+        uses: actions/download-artifact@v5
+        with:
+          path: artifacts
+
+      - name: Collect and label RPMs by SFOS release
+        run: |
+          # Two targets share an arch (e.g. 4.6 and 5.0 aarch64) and therefore
+          # an identical RPM filename; the SFOS release is not in the name.
+          # Suffix each asset with its SFOS release so they don't collide.
+          mkdir -p release
+          for dir in artifacts/rpm-*; do
+            sfos=$(basename "$dir" | sed -E 's/^rpm-(.*)-[^-]+$/\1/')
+            find "$dir" -name '*.rpm' -print0 | while IFS= read -r -d '' rpm; do
+              base=$(basename "$rpm" .rpm)
+              cp "$rpm" "release/${base}-sfos${sfos}.rpm"
+            done
+          done
+          ls -l release
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          # 0.x is beta; drafted so the assets can be eyeballed before it goes
+          # public (flip to false, or set prerelease, once you're comfortable).
+          draft: true
+          prerelease: true
+          generate_release_notes: true
+          files: release/*.rpm

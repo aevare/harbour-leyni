@@ -1,7 +1,7 @@
 Name:       harbour-bitvault
 
 Summary:    Native, open-source Bitwarden client for Sailfish OS
-Version:    0.1
+Version:    0.1.0
 Release:    1
 # GPL-3.0-or-later; tag uses Fedora-style form required by the Sailfish rpmlint allowlist
 License:    GPLv3+
@@ -45,6 +45,10 @@ PackageIcon: https://raw.githubusercontent.com/aevare/harbour-bitvault/main/icon
 
 %install
 %make_install
+
+# Strip the main binary here so release RPMs are stripped even when the build
+# is driven by tooling that cannot pass `mb2 -d` (e.g. the CI build action).
+strip %{buildroot}%{_bindir}/%{name}
 
 desktop-file-install --delete-original \
     --dir %{buildroot}%{_datadir}/applications \
