@@ -9,6 +9,7 @@
 #include "base64.h"
 #include "crypto.h"
 #include "kdf.h"
+#include "pinwrap.h"
 
 namespace BitVault {
 namespace Ui {
@@ -26,6 +27,13 @@ const char kSettingKdfParallelism[] = "kdf/parallelism";
 const char kSettingAutoLockMinutes[] = "security/autoLockMinutes";
 const char kSettingClipboardSeconds[] = "security/clipboardClearSeconds";
 const char kSettingLockOnMinimize[] = "security/lockOnMinimize";
+const char kSettingPinFailures[] = "security/pinFailures";
+
+// Consecutive wrong-PIN attempts before the wrapped key is wiped and a full
+// master-password unlock is forced. Chosen by the user (2026-07-19).
+const int kMaxPinFailures = 3;
+// Shortest PIN we will wrap. Enforced in QML too; this is the backstop.
+const int kMinPinLength = 4;
 
 Crypto::SecureBytes toSecure(const QString &text)
 {
@@ -256,6 +264,21 @@ void AppController::deriveAsync(
         }));
 }
 
+void AppController::runPinWorker(
+    std::function<std::shared_ptr<PinResult>()> work,
+    std::function<void(std::shared_ptr<PinResult>)> next)
+{
+    if (m_pinWatcher.isRunning()) {
+        setError(QStringLiteral("another operation is in progress"));
+        return;
+    }
+    disconnect(&m_pinWatcher, nullptr, nullptr, nullptr);
+    connect(&m_pinWatcher,
+            &QFutureWatcher<std::shared_ptr<PinResult>>::finished, this,
+            [this, next]() { next(m_pinWatcher.result()); });
+    m_pinWatcher.setFuture(QtConcurrent::run(work));
+}
+
 void AppController::startLogin(const QString &password)
 {
     if (email().isEmpty()) {
@@ -459,6 +482,184 @@ void AppController::unlock(const QString &password)
     });
 }
 
+bool AppController::pinEnabled() const
+{
+    return m_pinStore.exists();
+}
+
+int AppController::pinFailures() const
+{
+    return m_settings.value(QLatin1String(kSettingPinFailures), 0).toInt();
+}
+
+void AppController::setPinFailures(int count)
+{
+    m_settings.setValue(QLatin1String(kSettingPinFailures), count);
+}
+
+void AppController::forgetPin()
+{
+    m_pinStore.clear();
+    m_settings.remove(QLatin1String(kSettingPinFailures));
+    emit pinChanged();
+}
+
+void AppController::enablePin(const QString &masterPassword, const QString &pin)
+{
+    // enablePin runs from Settings, whose page does not display App.lastError.
+    // Feedback (success and failure) is therefore surfaced via notify(), the
+    // global banner — mirroring the "PIN unlock enabled" success toast.
+    if (pin.size() < kMinPinLength) {
+        emit notify(QStringLiteral("PIN must be at least %1 digits")
+                        .arg(kMinPinLength));
+        return;
+    }
+    if (!m_syncStore.exists()) {
+        emit notify(QStringLiteral("No vault — sign in first"));
+        return;
+    }
+    Crypto::KdfParams params = storedKdfParams();
+    if (params.iterations == 0) {
+        emit notify(QStringLiteral("Missing KDF parameters — sign in again"));
+        return;
+    }
+    setError(QString());
+    setBusy(true);
+
+    // Stage 1: re-derive the master key from the master password (account KDF,
+    // off-thread). Stage 2: verify it, then wrap it under the PIN (Argon2id,
+    // also off-thread). The master key exists only inside these callbacks.
+    deriveAsync(masterPassword, params,
+                [this, pin](std::shared_ptr<DerivedSecrets> secrets) {
+        if (!secrets->error.isEmpty()) {
+            setBusy(false);
+            emit notify(secrets->error);
+            return;
+        }
+        QString error;
+        if (!m_vault.verifyMasterKey(secrets->masterKey, &error)) {
+            setBusy(false);
+            emit notify(QStringLiteral("Wrong master password — PIN not "
+                                       "enabled"));
+            return;
+        }
+        // Move the verified master key and the PIN into the wrap worker.
+        auto keyPtr = std::make_shared<Crypto::SecureBytes>(
+            std::move(secrets->masterKey));
+        auto pinPtr =
+            std::make_shared<Crypto::SecureBytes>(toSecure(pin));
+        runPinWorker(
+            [keyPtr, pinPtr]() -> std::shared_ptr<PinResult> {
+                auto out = std::make_shared<PinResult>();
+                try {
+                    out->blob = QByteArray::fromStdString(
+                        Crypto::wrapWithPin(*keyPtr, *pinPtr).serialize());
+                } catch (const Crypto::CryptoError &e) {
+                    out->error = QString::fromUtf8(e.what());
+                }
+                *keyPtr = Crypto::SecureBytes();
+                *pinPtr = Crypto::SecureBytes();
+                return out;
+            },
+            [this](std::shared_ptr<PinResult> result) {
+                setBusy(false);
+                if (!result->error.isEmpty()) {
+                    emit notify(result->error);
+                    return;
+                }
+                if (!m_pinStore.save(result->blob)) {
+                    emit notify(QStringLiteral("Could not store PIN"));
+                    return;
+                }
+                setPinFailures(0);
+                emit pinChanged();
+                emit notify(QStringLiteral("PIN unlock enabled"));
+            });
+    });
+}
+
+void AppController::disablePin()
+{
+    forgetPin();
+    emit notify(QStringLiteral("PIN unlock disabled"));
+}
+
+void AppController::unlockWithPin(const QString &pin)
+{
+    if (!m_pinStore.exists()) {
+        setError(QStringLiteral("PIN not set up"));
+        return;
+    }
+    if (!m_syncStore.exists()) {
+        setError(QStringLiteral("no local vault — sign in first"));
+        return;
+    }
+
+    Crypto::PinWrappedKey wrapped;
+    try {
+        wrapped = Crypto::PinWrappedKey::parse(
+            m_pinStore.load().toStdString());
+    } catch (const Crypto::CryptoError &) {
+        // A corrupt PIN file is unusable — drop it and fall back.
+        forgetPin();
+        setError(QStringLiteral("PIN data unreadable — use your master "
+                                "password"));
+        return;
+    }
+
+    setError(QString());
+    setBusy(true);
+    auto pinPtr = std::make_shared<Crypto::SecureBytes>(toSecure(pin));
+    auto wrappedPtr =
+        std::make_shared<Crypto::PinWrappedKey>(std::move(wrapped));
+    runPinWorker(
+        [pinPtr, wrappedPtr]() -> std::shared_ptr<PinResult> {
+            auto out = std::make_shared<PinResult>();
+            try {
+                out->masterKey =
+                    Crypto::unwrapWithPin(*wrappedPtr, *pinPtr);
+            } catch (const Crypto::CryptoError &e) {
+                out->error = QString::fromUtf8(e.what());
+            }
+            *pinPtr = Crypto::SecureBytes();
+            return out;
+        },
+        [this](std::shared_ptr<PinResult> result) {
+            setBusy(false);
+            if (!result->error.isEmpty()) {
+                // Wrong PIN (MAC mismatch). Count it; wipe at the limit.
+                const int failures = pinFailures() + 1;
+                if (failures >= kMaxPinFailures) {
+                    forgetPin();
+                    setError(QStringLiteral(
+                        "Too many wrong PINs — unlock with your master "
+                        "password"));
+                } else {
+                    setPinFailures(failures);
+                    setError(QStringLiteral("Wrong PIN (%1 of %2)")
+                                 .arg(failures)
+                                 .arg(kMaxPinFailures));
+                }
+                return;
+            }
+            QString error;
+            if (m_vault.unlockWithMasterKey(std::move(result->masterKey),
+                                            &error)) {
+                setPinFailures(0);
+                m_model.refresh();
+                emit vaultChanged();
+                setState(QStringLiteral("unlocked"));
+            } else {
+                // Correct PIN but the key no longer fits the vault (e.g. the
+                // master password was changed on the server). Not a wrong-PIN
+                // event: drop the stale PIN and ask for the master password.
+                forgetPin();
+                setError(QStringLiteral("Vault key changed — unlock with your "
+                                        "master password"));
+            }
+        });
+}
+
 void AppController::lock()
 {
     m_vault.lock();
@@ -518,6 +719,7 @@ void AppController::signOut()
     m_refreshToken.clear();
     m_settings.remove(QLatin1String(kSettingRefreshToken));
     m_syncStore.clear();
+    forgetPin(); // the wrapped master key belongs to this account
     setState(QStringLiteral("login"));
     emit vaultChanged();
 }

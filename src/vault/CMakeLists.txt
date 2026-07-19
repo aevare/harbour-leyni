@@ -3,6 +3,7 @@
 find_package(Qt5 COMPONENTS Core REQUIRED)
 
 add_library(bitvault-vault STATIC
+    pinstore.cpp
     syncparser.cpp
     syncstore.cpp
     vault.cpp
