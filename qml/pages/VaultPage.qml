@@ -36,11 +36,32 @@ Page {
         }
     }
 
-    Component.onCompleted: reloadFolders()
+    // SilicaListView computes its initial contentY before the (header +
+    // section) heights settle, landing slightly scrolled with the first
+    // section pulled up under the header — scrolling away and back forces the
+    // recompute that fixes it. Snapping to the top once layout settles does
+    // the same thing up front. interval 0 fires on the next event-loop pass,
+    // after the first layout.
+    Timer {
+        id: topSnap
+        interval: 0
+        onTriggered: listView.positionViewAtBeginning()
+    }
+
+    Component.onCompleted: {
+        reloadFolders()
+        topSnap.start()
+    }
 
     Connections {
         target: App
         onVaultChanged: reloadFolders()
+    }
+
+    Connections {
+        target: App.vaultModel
+        // Sections appearing/disappearing re-triggers the same layout race.
+        onHasFavoritesChanged: topSnap.restart()
     }
 
     SilicaListView {
@@ -51,10 +72,20 @@ Page {
         // The model sorts favourites first; headers only make sense when
         // both groups exist, so they collapse when nothing is a favourite.
         section.property: "favorite"
-        section.delegate: SectionHeader {
-            visible: listView.model.hasFavorites
-            height: visible ? Theme.itemSizeSmall : 0
-            text: section === "true" ? qsTr("Favourites") : qsTr("Other items")
+        section.delegate: Item {
+            width: listView.width
+            // Use the SectionHeader's own natural height when shown — forcing
+            // a taller height drops its bottom-aligned label onto the first
+            // item. Collapse to 0 (single "Other items" group) otherwise.
+            height: listView.model.hasFavorites ? sectionLabel.height : 0
+            clip: true
+
+            SectionHeader {
+                id: sectionLabel
+                width: parent.width
+                text: section === "true" ? qsTr("Favourites")
+                                         : qsTr("Other items")
+            }
         }
 
         header: Column {
