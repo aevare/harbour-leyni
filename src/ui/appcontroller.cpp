@@ -9,6 +9,7 @@
 #include "base64.h"
 #include "crypto.h"
 #include "kdf.h"
+#include "passwordgen.h"
 #include "pinwrap.h"
 
 namespace BitVault {
@@ -28,6 +29,12 @@ const char kSettingAutoLockMinutes[] = "security/autoLockMinutes";
 const char kSettingClipboardSeconds[] = "security/clipboardClearSeconds";
 const char kSettingLockOnMinimize[] = "security/lockOnMinimize";
 const char kSettingPinFailures[] = "security/pinFailures";
+const char kSettingGenLength[] = "generator/length";
+const char kSettingGenLower[] = "generator/lowercase";
+const char kSettingGenUpper[] = "generator/uppercase";
+const char kSettingGenDigits[] = "generator/digits";
+const char kSettingGenSymbols[] = "generator/symbols";
+const char kSettingGenAvoidAmbiguous[] = "generator/avoidAmbiguous";
 
 // Consecutive wrong-PIN attempts before the wrapped key is wiped and a full
 // master-password unlock is forced. Chosen by the user (2026-07-19).
@@ -868,6 +875,65 @@ void AppController::deleteItem(const QString &itemId)
             m_api.softDeleteCipher(token, itemId, done);
         },
         QStringLiteral("Item deleted"));
+}
+
+QString AppController::generatePassword(const QVariantMap &options)
+{
+    Crypto::PasswordOptions opts;
+    opts.length = options.value(QStringLiteral("length"), 16).toInt();
+    opts.lowercase = options.value(QStringLiteral("lowercase"), true).toBool();
+    opts.uppercase = options.value(QStringLiteral("uppercase"), true).toBool();
+    opts.digits = options.value(QStringLiteral("digits"), true).toBool();
+    opts.symbols = options.value(QStringLiteral("symbols"), true).toBool();
+    opts.avoidAmbiguous =
+        options.value(QStringLiteral("avoidAmbiguous"), false).toBool();
+    // minDigits/minSymbols keep their defaults (1); not exposed in the UI yet.
+    try {
+        return QString::fromStdString(Crypto::generatePassword(opts));
+    } catch (const Crypto::CryptoError &e) {
+        setError(QString::fromUtf8(e.what()));
+        return QString();
+    }
+}
+
+QVariantMap AppController::generatorOptions() const
+{
+    QVariantMap m;
+    m.insert(QStringLiteral("length"),
+             m_settings.value(QLatin1String(kSettingGenLength), 16).toInt());
+    m.insert(QStringLiteral("lowercase"),
+             m_settings.value(QLatin1String(kSettingGenLower), true).toBool());
+    m.insert(QStringLiteral("uppercase"),
+             m_settings.value(QLatin1String(kSettingGenUpper), true).toBool());
+    m.insert(QStringLiteral("digits"),
+             m_settings.value(QLatin1String(kSettingGenDigits), true).toBool());
+    m.insert(QStringLiteral("symbols"),
+             m_settings.value(QLatin1String(kSettingGenSymbols), true).toBool());
+    m.insert(QStringLiteral("avoidAmbiguous"),
+             m_settings.value(QLatin1String(kSettingGenAvoidAmbiguous), false)
+                 .toBool());
+    return m;
+}
+
+void AppController::setGeneratorOptions(const QVariantMap &options)
+{
+    m_settings.setValue(QLatin1String(kSettingGenLength),
+                        options.value(QStringLiteral("length"), 16).toInt());
+    m_settings.setValue(
+        QLatin1String(kSettingGenLower),
+        options.value(QStringLiteral("lowercase"), true).toBool());
+    m_settings.setValue(
+        QLatin1String(kSettingGenUpper),
+        options.value(QStringLiteral("uppercase"), true).toBool());
+    m_settings.setValue(
+        QLatin1String(kSettingGenDigits),
+        options.value(QStringLiteral("digits"), true).toBool());
+    m_settings.setValue(
+        QLatin1String(kSettingGenSymbols),
+        options.value(QStringLiteral("symbols"), true).toBool());
+    m_settings.setValue(
+        QLatin1String(kSettingGenAvoidAmbiguous),
+        options.value(QStringLiteral("avoidAmbiguous"), false).toBool());
 }
 
 void AppController::signOut()

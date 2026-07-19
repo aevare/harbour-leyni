@@ -132,6 +132,15 @@ public:
     Q_INVOKABLE void saveItem(const QString &itemId, const QVariantMap &fields);
     Q_INVOKABLE void deleteItem(const QString &itemId);
 
+    // --- password generator ---
+    // Generates a password from `options` (keys: length, lowercase, uppercase,
+    // digits, symbols, avoidAmbiguous). Returns empty + sets lastError on an
+    // impossible combination (the UI also guards against those).
+    Q_INVOKABLE QString generatePassword(const QVariantMap &options);
+    // Last-used generator options (persisted), so the dialog restores them.
+    Q_INVOKABLE QVariantMap generatorOptions() const;
+    Q_INVOKABLE void setGeneratorOptions(const QVariantMap &options);
+
     // --- item access (thin proxies over Vault; see vault.h) ---
     Q_INVOKABLE QString itemPassword(const QString &itemId);
     Q_INVOKABLE QString itemNotes(const QString &itemId);

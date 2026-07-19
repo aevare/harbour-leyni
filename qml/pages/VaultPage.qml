@@ -157,6 +157,17 @@ Page {
                 onClicked: App.lock()
             }
             MenuItem {
+                text: qsTr("Generate password")
+                onClicked: {
+                    var gen = pageStack.push(
+                        Qt.resolvedUrl("GeneratorDialog.qml"),
+                        { acceptText: qsTr("Copy") })
+                    gen.accepted.connect(function() {
+                        App.copyToClipboard(gen.password)
+                    })
+                }
+            }
+            MenuItem {
                 text: qsTr("New item")
                 onClicked: pageStack.push(Qt.resolvedUrl("ItemEditPage.qml"),
                                           { mode: "create" })
