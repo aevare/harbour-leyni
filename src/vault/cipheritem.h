@@ -10,6 +10,7 @@
 #pragma once
 
 #include <QDateTime>
+#include <QJsonObject>
 #include <QString>
 #include <QStringList>
 
@@ -55,6 +56,11 @@ struct EncryptedCipher {
     std::vector<EncryptedField> fields;      // custom fields
     std::vector<EncryptedField> cardFields;     // number, code, expMonth, ...
     std::vector<EncryptedField> identityFields; // firstName, address1, ...
+    // The original sync JSON object for this cipher, kept verbatim so an edit
+    // can re-encrypt only the changed fields and preserve everything the app
+    // does not model (password history, URI match types, custom-field
+    // structure). Ciphertext only — never contains decrypted data.
+    QJsonObject raw;
 };
 
 struct Folder {

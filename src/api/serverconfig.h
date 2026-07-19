@@ -25,6 +25,11 @@ struct ServerConfig {
     {
         return apiBase + "/two-factor/send-email-login";
     }
+    QString ciphersUrl() const { return apiBase + "/ciphers"; }
+    QString cipherUrl(const QString &id) const
+    {
+        return apiBase + "/ciphers/" + id;
+    }
 };
 
 } // namespace Api

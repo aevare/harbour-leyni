@@ -185,7 +185,14 @@ and SECURITY.md.
 
 ## Phase 6 — Post-MVP (ordered by expected demand)
 
-1. Write support: edit/create/delete items (uses the Phase 1 encrypt path)
+1. Write support: edit/create/delete items (uses the Phase 1 encrypt path) —
+   **in progress 2026-07-19**: create + edit + soft-delete shipped for Login and
+   Secure Note (personal vault). Encrypt-and-assemble in `src/vault/`
+   (`buildCreateBody`/`buildUpdateBody`), Bearer CRUD in `src/api/`, editor in
+   `qml/pages/ItemEditPage.qml`. Edits preserve unmodeled fields (password
+   history, custom fields, extra URIs). Soft-delete = Trash (recoverable). Verified
+   by vault unit tests + an api integration round-trip against Vaultwarden. Still
+   TODO: card/identity create/edit, custom-field editing UI, org-item creation.
 2. Password/passphrase generator
 3. ~~PIN unlock as a **documented weaker option** (PIN-wrapped key; threat model
    in SECURITY.md)~~ — **done 2026-07-19** (pulled forward at Ævar's request

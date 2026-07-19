@@ -14,10 +14,13 @@
 //     protected key); nothing partial is ever exposed.
 #pragma once
 
+#include <QByteArray>
 #include <QHash>
+#include <QJsonObject>
 #include <QObject>
 #include <QString>
 #include <QTimer>
+#include <QVariantMap>
 
 #include <map>
 #include <vector>
@@ -76,6 +79,25 @@ public:
     void lock();
     bool isLocked() const { return m_locked; }
 
+    // --- write support (see doc/PROTOCOL.md "Writes") ---
+    // Build the encrypted CipherRequestModel JSON for a NEW personal-vault
+    // item of the given type from plaintext `fields` (keys: name, notes,
+    // folderId, favorite, and for logins username/password/uri/totp).
+    // Encrypts under the user key; no per-item key. Returns the request body,
+    // or an empty QByteArray with *errorMessage set. Const: encryption uses
+    // the keys but changes no vault state.
+    QByteArray buildCreateBody(CipherType type, const QVariantMap &fields,
+                               QString *errorMessage) const;
+
+    // Build the encrypted CipherRequestModel JSON to UPDATE an existing item:
+    // starts from the item's original sync JSON (EncryptedCipher::raw),
+    // overwrites only the edited fields with freshly-encrypted values, drops
+    // response-only keys, and preserves everything the app does not model
+    // (password history, extra URIs, custom fields). Same field keys as
+    // buildCreateBody.
+    QByteArray buildUpdateBody(const QString &itemId, const QVariantMap &fields,
+                               QString *errorMessage) const;
+
     // --- display data (valid while unlocked) ---
     const std::vector<DecryptedItem> &items() const { return m_items; }
     QString folderName(const QString &folderId) const;
@@ -85,6 +107,9 @@ public:
     // --- on-demand secret access (decrypt-per-access, never cached) ---
     QString itemPassword(const QString &itemId, QString *errorMessage);
     QString itemNotes(const QString &itemId, QString *errorMessage);
+    // The raw TOTP secret (otpauth:// URI or base32), for prefilling the
+    // editor — distinct from totpCode(), which returns a generated code.
+    QString itemTotpSecret(const QString &itemId, QString *errorMessage);
     // name/value pairs for card, identity, and custom fields.
     QList<QPair<QString, QString>> itemDetailFields(const QString &itemId,
                                                     QString *errorMessage);
@@ -113,6 +138,17 @@ private:
                    QString *errorMessage) const;
     QString decryptToString(const std::string &encString,
                             const Crypto::SymmetricKey &key) const;
+
+    // Encrypts UTF-8 plaintext into a serialized type-2 EncString under key.
+    // Empty plaintext returns an empty string (caller stores JSON null).
+    std::string encryptField(const QString &plaintext,
+                             const Crypto::SymmetricKey &key) const;
+    // Assembles a login sub-object: re-encrypts username/password/totp and
+    // patches the primary URI while preserving any additional URIs present in
+    // `existing` (empty for a fresh create).
+    QJsonObject buildLoginObject(const QVariantMap &fields,
+                                 const QJsonObject &existing,
+                                 const Crypto::SymmetricKey &key) const;
 
     SyncData m_data;
     bool m_locked = true;

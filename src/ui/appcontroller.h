@@ -123,9 +123,20 @@ public:
     // Forgets tokens and the local blob; back to "login" (keeps account).
     Q_INVOKABLE void signOut();
 
+    // --- write support (create/edit/soft-delete) ---
+    // `fields` is a QVariantMap of plaintext entered in QML (keys: name,
+    // notes, folderId, favorite, and for logins username/password/uri/totp).
+    // The vault encrypts it; plaintext never leaves this process unencrypted.
+    // Each: build body → refresh token → cipher call → re-sync → notify.
+    Q_INVOKABLE void createItem(int type, const QVariantMap &fields);
+    Q_INVOKABLE void saveItem(const QString &itemId, const QVariantMap &fields);
+    Q_INVOKABLE void deleteItem(const QString &itemId);
+
     // --- item access (thin proxies over Vault; see vault.h) ---
     Q_INVOKABLE QString itemPassword(const QString &itemId);
     Q_INVOKABLE QString itemNotes(const QString &itemId);
+    // Raw TOTP secret for prefilling the editor (not a generated code).
+    Q_INVOKABLE QString itemTotpSecret(const QString &itemId);
     Q_INVOKABLE QVariantList itemDetailFields(const QString &itemId);
     Q_INVOKABLE QVariantMap totpFor(const QString &itemId);
     Q_INVOKABLE QString folderName(const QString &folderId);
@@ -178,6 +189,27 @@ private:
     void finishLogin(const Api::TokenResponse &token);
     void applySyncBlob(const QByteArray &blob, bool freshLogin);
     void refreshAndSync(bool freshLogin);
+
+    // A cipher write: given a valid access token, invoke the ApiClient call
+    // and deliver its result.
+    using CipherWriteCall = std::function<void(
+        const QByteArray &token, std::function<void(Api::Result<QByteArray>)>)>;
+
+    // Shared write pipeline. Uses the live access token when present (a
+    // just-logged-in session may have no refresh token at all); refreshes only
+    // when there is no access token (offline unlock) or the server rejects it
+    // (401/403). On success re-syncs and reloads from the server's response.
+    void writeAndResync(const CipherWriteCall &doWrite,
+                        const QString &successMessage);
+    // Refresh the access token, then run the write. Used as the fallback path.
+    void refreshThenWrite(const CipherWriteCall &doWrite,
+                          const QString &successMessage);
+    // Handle a write result: on success re-sync + reload; else notify.
+    void finishWrite(const Api::Result<QByteArray> &writeResult,
+                     const QString &successMessage);
+    // Post-write reload (vault is unlocked): persist blob, reloadSync, refresh
+    // the model, notify. Locks + reports if the account key changed.
+    void applyWriteSync(const QByteArray &blob, const QString &successMessage);
     void handleAppStateChanged(Qt::ApplicationState state);
     void clearClipboardIfOurs();
 

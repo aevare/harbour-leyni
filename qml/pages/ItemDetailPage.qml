@@ -13,6 +13,8 @@ Page {
     property string username: ""
     property string uri: ""
     property int cipherType: 1
+    property string folderId: ""
+    property bool favorite: false
     property bool hasTotp: false
     property bool hasPassword: false
     property bool hasNotes: false
@@ -77,6 +79,14 @@ Page {
 
     Component.onDestruction: clearSecrets()
 
+    // remorseAction() only exists on ListItem; a pulley MenuItem needs an
+    // explicit RemorsePopup.
+    RemorsePopup { id: deleteRemorse }
+
+    // Only Logins and Secure Notes are editable this phase; cards/identities
+    // stay view-only (their editor fields are not built yet).
+    readonly property bool editable: cipherType === 1 || cipherType === 2
+
     Timer {
         interval: 1000
         repeat: true
@@ -90,6 +100,27 @@ Page {
         contentHeight: column.height
 
         PullDownMenu {
+            MenuItem {
+                text: qsTr("Delete")
+                onClicked: deleteRemorse.execute(qsTr("Deleting"), function() {
+                    App.deleteItem(itemId)
+                    pageStack.pop()
+                })
+            }
+            MenuItem {
+                text: qsTr("Edit")
+                visible: page.editable
+                onClicked: pageStack.push(Qt.resolvedUrl("ItemEditPage.qml"), {
+                    mode: "edit",
+                    itemId: itemId,
+                    cipherType: cipherType,
+                    presetName: name,
+                    presetUsername: username,
+                    presetUri: uri,
+                    presetFolderId: folderId,
+                    presetFavorite: favorite
+                })
+            }
             MenuItem {
                 text: qsTr("Copy name")
                 onClicked: App.copyToClipboard(name)

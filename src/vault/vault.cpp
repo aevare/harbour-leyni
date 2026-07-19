@@ -2,6 +2,10 @@
 
 #include <algorithm>
 
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonValue>
+
 #include "base64.h"
 #include "crypto.h"
 #include "encstring.h"
@@ -16,6 +20,18 @@ using Crypto::CryptoError;
 using Crypto::EncString;
 using Crypto::SecureBytes;
 using Crypto::SymmetricKey;
+
+// Accept camelCase (current servers) and PascalCase (older ones), mirroring
+// syncparser's reader — the raw cipher object we patch came from there.
+QJsonValue rawValueOf(const QJsonObject &obj, const QString &camelCase)
+{
+    if (obj.contains(camelCase)) {
+        return obj.value(camelCase);
+    }
+    QString pascal = camelCase;
+    pascal[0] = pascal[0].toUpper();
+    return obj.value(pascal);
+}
 
 QString fromSecure(const SecureBytes &bytes)
 {
@@ -426,6 +442,28 @@ QString Vault::itemNotes(const QString &itemId, QString *errorMessage)
     }
 }
 
+QString Vault::itemTotpSecret(const QString &itemId, QString *errorMessage)
+{
+    if (m_locked) {
+        *errorMessage = QStringLiteral("vault is locked");
+        return QString();
+    }
+    const EncryptedCipher *cipher = findCipher(itemId);
+    if (cipher == nullptr || cipher->login.totp.empty()) {
+        return QString();
+    }
+    SymmetricKey key;
+    if (!cipherKey(*cipher, &key, errorMessage)) {
+        return QString();
+    }
+    try {
+        return decryptToString(cipher->login.totp, key);
+    } catch (const CryptoError &e) {
+        *errorMessage = QString::fromUtf8(e.what());
+        return QString();
+    }
+}
+
 QList<QPair<QString, QString>> Vault::itemDetailFields(const QString &itemId,
                                                        QString *errorMessage)
 {
@@ -535,6 +573,200 @@ void Vault::noteActivity()
 {
     if (!m_locked && m_autoLockTimer.interval() > 0) {
         m_autoLockTimer.start();
+    }
+}
+
+std::string Vault::encryptField(const QString &plaintext,
+                                const SymmetricKey &key) const
+{
+    if (plaintext.isEmpty()) {
+        return std::string();
+    }
+    const QByteArray utf8 = plaintext.toUtf8();
+    SecureBytes pt(reinterpret_cast<const uint8_t *>(utf8.constData()),
+                   static_cast<size_t>(utf8.size()));
+    return Crypto::encryptAes256CbcHmac(pt, key).serialize();
+    // The QByteArray copy of the plaintext is freed unzeroed — the same Qt
+    // limitation accepted elsewhere for user-entered strings (see toSecure).
+}
+
+QJsonObject Vault::buildLoginObject(const QVariantMap &fields,
+                                    const QJsonObject &existing,
+                                    const SymmetricKey &key) const
+{
+    auto encOrNull = [&](const QString &plaintext) -> QJsonValue {
+        const std::string enc = encryptField(plaintext, key);
+        return enc.empty() ? QJsonValue(QJsonValue::Null)
+                           : QJsonValue(QString::fromStdString(enc));
+    };
+
+    QJsonObject login = existing;
+    login.insert(QStringLiteral("username"),
+                 encOrNull(fields.value(QStringLiteral("username")).toString()));
+    login.insert(QStringLiteral("password"),
+                 encOrNull(fields.value(QStringLiteral("password")).toString()));
+    login.insert(QStringLiteral("totp"),
+                 encOrNull(fields.value(QStringLiteral("totp")).toString()));
+
+    // The editor exposes one (primary) URI. Patch uris[0] and keep any extra
+    // URIs the item already had; only clear when there is at most one.
+    const QString uri = fields.value(QStringLiteral("uri")).toString();
+    QJsonArray uris = rawValueOf(existing, QStringLiteral("uris")).toArray();
+    if (!uri.isEmpty()) {
+        QJsonObject first =
+            uris.isEmpty() ? QJsonObject() : uris.at(0).toObject();
+        first.insert(QStringLiteral("uri"),
+                     QJsonValue(QString::fromStdString(encryptField(uri, key))));
+        if (!first.contains(QStringLiteral("match"))) {
+            first.insert(QStringLiteral("match"), QJsonValue(QJsonValue::Null));
+        }
+        if (uris.isEmpty()) {
+            uris.append(first);
+        } else {
+            uris.replace(0, first);
+        }
+        login.insert(QStringLiteral("uris"), uris);
+    } else if (uris.size() <= 1) {
+        login.insert(QStringLiteral("uris"), QJsonValue(QJsonValue::Null));
+    }
+    return login;
+}
+
+QByteArray Vault::buildCreateBody(CipherType type, const QVariantMap &fields,
+                                  QString *errorMessage) const
+{
+    if (m_locked) {
+        *errorMessage = QStringLiteral("vault is locked");
+        return QByteArray();
+    }
+    const QString name = fields.value(QStringLiteral("name")).toString();
+    if (name.isEmpty()) {
+        *errorMessage = QStringLiteral("name is required");
+        return QByteArray();
+    }
+    // New personal items are encrypted directly under the user key (no
+    // per-item key — Bitwarden's default for freshly created ciphers).
+    const SymmetricKey &key = m_userKey;
+
+    try {
+        auto encOrNull = [&](const QString &plaintext) -> QJsonValue {
+            const std::string enc = encryptField(plaintext, key);
+            return enc.empty() ? QJsonValue(QJsonValue::Null)
+                               : QJsonValue(QString::fromStdString(enc));
+        };
+        const QString folderId =
+            fields.value(QStringLiteral("folderId")).toString();
+
+        QJsonObject body;
+        body.insert(QStringLiteral("type"), static_cast<int>(type));
+        body.insert(QStringLiteral("name"),
+                    QString::fromStdString(encryptField(name, key)));
+        body.insert(QStringLiteral("notes"),
+                    encOrNull(fields.value(QStringLiteral("notes")).toString()));
+        body.insert(QStringLiteral("favorite"),
+                    fields.value(QStringLiteral("favorite")).toBool());
+        body.insert(QStringLiteral("folderId"),
+                    folderId.isEmpty() ? QJsonValue(QJsonValue::Null)
+                                       : QJsonValue(folderId));
+        body.insert(QStringLiteral("organizationId"),
+                    QJsonValue(QJsonValue::Null));
+
+        if (type == CipherType::Login) {
+            body.insert(QStringLiteral("login"),
+                        buildLoginObject(fields, QJsonObject(), key));
+        } else if (type == CipherType::SecureNote) {
+            QJsonObject note;
+            note.insert(QStringLiteral("type"), 0);
+            body.insert(QStringLiteral("secureNote"), note);
+        } else {
+            *errorMessage = QStringLiteral("unsupported item type");
+            return QByteArray();
+        }
+        return QJsonDocument(body).toJson(QJsonDocument::Compact);
+    } catch (const CryptoError &e) {
+        *errorMessage = QString::fromUtf8(e.what());
+        return QByteArray();
+    }
+}
+
+QByteArray Vault::buildUpdateBody(const QString &itemId,
+                                  const QVariantMap &fields,
+                                  QString *errorMessage) const
+{
+    if (m_locked) {
+        *errorMessage = QStringLiteral("vault is locked");
+        return QByteArray();
+    }
+    const EncryptedCipher *cipher = findCipher(itemId);
+    if (cipher == nullptr) {
+        *errorMessage = QStringLiteral("item not found");
+        return QByteArray();
+    }
+    const QString name = fields.value(QStringLiteral("name")).toString();
+    if (name.isEmpty()) {
+        *errorMessage = QStringLiteral("name is required");
+        return QByteArray();
+    }
+    SymmetricKey key;
+    if (!cipherKey(*cipher, &key, errorMessage)) {
+        return QByteArray();
+    }
+
+    try {
+        auto encOrNull = [&](const QString &plaintext) -> QJsonValue {
+            const std::string enc = encryptField(plaintext, key);
+            return enc.empty() ? QJsonValue(QJsonValue::Null)
+                               : QJsonValue(QString::fromStdString(enc));
+        };
+
+        // Start from the original object so unmodeled fields (password
+        // history, custom fields, extra URIs, reprompt) survive verbatim.
+        QJsonObject body = cipher->raw;
+        const QString revision =
+            rawValueOf(body, QStringLiteral("revisionDate")).toString();
+
+        // Remove response-only keys the update endpoint does not accept.
+        static const char *const responseOnly[] = {
+            "object", "id", "revisionDate", "creationDate", "deletedDate",
+            "edit", "viewPassword", "permissions", "collectionIds",
+            "organizationUseTotp"};
+        for (const char *k : responseOnly) {
+            QString camel = QLatin1String(k);
+            body.remove(camel);
+            QString pascal = camel;
+            pascal[0] = pascal[0].toUpper();
+            body.remove(pascal);
+        }
+
+        const QString folderId =
+            fields.value(QStringLiteral("folderId")).toString();
+        body.insert(QStringLiteral("name"),
+                    QString::fromStdString(encryptField(name, key)));
+        body.insert(QStringLiteral("notes"),
+                    encOrNull(fields.value(QStringLiteral("notes")).toString()));
+        body.insert(QStringLiteral("favorite"),
+                    fields.value(QStringLiteral("favorite")).toBool());
+        body.insert(QStringLiteral("folderId"),
+                    folderId.isEmpty() ? QJsonValue(QJsonValue::Null)
+                                       : QJsonValue(folderId));
+
+        if (cipher->type == CipherType::Login) {
+            const QJsonObject existing =
+                rawValueOf(body, QStringLiteral("login")).toObject();
+            body.remove(QStringLiteral("Login"));
+            body.insert(QStringLiteral("login"),
+                        buildLoginObject(fields, existing, key));
+        }
+
+        // Optimistic-concurrency hint: the server rejects the edit if the item
+        // changed elsewhere since this revision.
+        if (!revision.isEmpty()) {
+            body.insert(QStringLiteral("lastKnownRevisionDate"), revision);
+        }
+        return QJsonDocument(body).toJson(QJsonDocument::Compact);
+    } catch (const CryptoError &e) {
+        *errorMessage = QString::fromUtf8(e.what());
+        return QByteArray();
     }
 }
 

@@ -204,5 +204,61 @@ void ApiClient::sync(const QByteArray &accessToken,
     });
 }
 
+void ApiClient::sendAuthed(const QString &url, const QByteArray &verb,
+                           const QByteArray &accessToken, const QByteArray &body,
+                           const QString &opName,
+                           std::function<void(Result<QByteArray>)> callback)
+{
+    QNetworkRequest request{QUrl(url)};
+    request.setRawHeader("Accept", "application/json");
+    request.setRawHeader("Authorization", "Bearer " + accessToken);
+    if (!body.isEmpty()) {
+        request.setHeader(QNetworkRequest::ContentTypeHeader,
+                          QByteArray("application/json"));
+    }
+    QNetworkReply *reply = verb == "PUT" ? m_network->put(request, body)
+                                         : m_network->post(request, body);
+    armTimeout(reply);
+    connect(reply, &QNetworkReply::finished, this, [reply, opName, callback]() {
+        reply->deleteLater();
+        Result<QByteArray> result;
+        const int status = httpStatusOf(reply);
+        if (reply->error() != QNetworkReply::NoError && status == 0) {
+            result.error = transportError(reply);
+        } else if (status < 200 || status >= 300) {
+            result.error.httpStatus = status;
+            result.error.message =
+                QStringLiteral("%1 failed (HTTP %2)").arg(opName).arg(status);
+        } else {
+            result.value = reply->readAll();
+        }
+        callback(result);
+    });
+}
+
+void ApiClient::createCipher(const QByteArray &accessToken,
+                             const QByteArray &body,
+                             std::function<void(Result<QByteArray>)> callback)
+{
+    sendAuthed(m_config.ciphersUrl(), "POST", accessToken, body,
+               QStringLiteral("create"), callback);
+}
+
+void ApiClient::updateCipher(const QByteArray &accessToken, const QString &id,
+                             const QByteArray &body,
+                             std::function<void(Result<QByteArray>)> callback)
+{
+    sendAuthed(m_config.cipherUrl(id), "PUT", accessToken, body,
+               QStringLiteral("update"), callback);
+}
+
+void ApiClient::softDeleteCipher(
+    const QByteArray &accessToken, const QString &id,
+    std::function<void(Result<QByteArray>)> callback)
+{
+    sendAuthed(m_config.cipherUrl(id) + QStringLiteral("/delete"), "PUT",
+               accessToken, QByteArray(), QStringLiteral("delete"), callback);
+}
+
 } // namespace Api
 } // namespace BitVault
