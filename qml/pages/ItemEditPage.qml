@@ -140,6 +140,20 @@ Dialog {
                 placeholderText: qsTr("Password")
             }
 
+            Button {
+                visible: cipherType === 1
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Generate password")
+                onClicked: {
+                    var gen = pageStack.push(
+                        Qt.resolvedUrl("GeneratorDialog.qml"),
+                        { acceptText: qsTr("Use") })
+                    gen.accepted.connect(function() {
+                        passwordField.text = gen.password
+                    })
+                }
+            }
+
             TextField {
                 id: uriField
                 visible: cipherType === 1

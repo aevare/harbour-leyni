@@ -3,6 +3,7 @@ add_executable(crypto_tests
     crypto/encstring_tests.cpp
     crypto/kdf_bounds_tests.cpp
     crypto/main.cpp
+    crypto/passwordgen_tests.cpp
     crypto/pinwrap_tests.cpp
     crypto/rsa_tests.cpp
     crypto/securebytes_tests.cpp

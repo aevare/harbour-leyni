@@ -30,7 +30,8 @@ src/crypto/
 └── encstring.{h,cpp}     parse/decrypt/encrypt "2.<iv>|<ct>|<mac>" strings
 ```
 
-`pinwrap.{h,cpp}` (opt-in PIN unlock) also lives here.
+`pinwrap.{h,cpp}` (opt-in PIN unlock) and `passwordgen.{h,cpp}` (random password
+generation — CSPRNG with unbiased rejection sampling) also live here.
 
 Rules:
 

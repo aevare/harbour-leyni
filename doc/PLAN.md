@@ -193,7 +193,10 @@ and SECURITY.md.
    history, custom fields, extra URIs). Soft-delete = Trash (recoverable). Verified
    by vault unit tests + an api integration round-trip against Vaultwarden. Still
    TODO: card/identity create/edit, custom-field editing UI, org-item creation.
-2. Password/passphrase generator
+2. Password/passphrase generator — **password generator done 2026-07-19**:
+   `src/crypto/passwordgen.{h,cpp}` (CSPRNG + unbiased rejection sampling, KATs),
+   `GeneratorDialog.qml` reachable from the vault pulley (→ copy) and the item
+   editor (→ fill). Passphrase/diceware still TODO (needs a bundled EFF wordlist).
 3. ~~PIN unlock as a **documented weaker option** (PIN-wrapped key; threat model
    in SECURITY.md)~~ — **done 2026-07-19** (pulled forward at Ævar's request
    after the daily-use period). Master key wrapped by an Argon2id-derived KEK

@@ -30,6 +30,7 @@ only, no Qt GUI, no networking, no file I/O):
 | `keys.{h,cpp}` | HKDF stretch, master password hash, RSA-OAEP org-key unwrap |
 | `encstring.{h,cpp}` | EncString parse/decrypt/encrypt; MAC-then-decrypt |
 | `pinwrap.{h,cpp}` | opt-in PIN unlock: Argon2id KEK + EncString wrap of the master key (see "PIN unlock" below) |
+| `passwordgen.{h,cpp}` | random password generation: CSPRNG (`RAND_bytes`) with unbiased rejection sampling |
 | `totp.{h,cpp}` | RFC 6238 TOTP |
 
 Layering is strictly one-way (`qml/` → `src/ui/` → `src/vault/` → `src/api/` →

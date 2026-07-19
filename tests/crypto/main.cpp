@@ -11,6 +11,7 @@ void runVectorTests();
 void runRsaTests();
 void runTotpTests();
 void runPinWrapTests();
+void runPasswordGenTests();
 
 int main()
 {
@@ -32,6 +33,8 @@ int main()
     std::printf("totp: OK\n");
     runPinWrapTests();
     std::printf("pin wrap: OK\n");
+    runPasswordGenTests();
+    std::printf("password gen: OK\n");
 
     std::printf("crypto_tests: all checks passed\n");
     return 0;
