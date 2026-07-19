@@ -16,7 +16,6 @@ jobs:
       # https://hub.docker.com/r/coderus/sailfishos-platform-sdk/tags
       matrix:
         release:
-          - 4.5.0.16
           - 4.6.0.13
           - 5.0.0.43
         arch:
