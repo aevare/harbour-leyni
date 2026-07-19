@@ -80,6 +80,27 @@ Page {
                 onClicked: App.lockOnMinimize = !App.lockOnMinimize
             }
 
+            TextSwitch {
+                text: qsTr("PIN unlock")
+                description: qsTr("Unlock with a short PIN instead of your "
+                                  + "master password. Weaker: a copy of the "
+                                  + "app's data can be brute-forced offline.")
+                automaticCheck: false
+                checked: App.pinEnabled
+                enabled: !App.busy
+                onClicked: {
+                    if (App.pinEnabled) {
+                        App.disablePin()
+                    } else {
+                        var dialog = pageStack.push(
+                            Qt.resolvedUrl("EnablePinDialog.qml"))
+                        dialog.accepted.connect(function() {
+                            App.enablePin(dialog.masterPassword, dialog.pin)
+                        })
+                    }
+                }
+            }
+
             SectionHeader { text: qsTr("Account") }
 
             Label {

@@ -6,11 +6,22 @@ Page {
     allowedOrientations: Orientation.All
     readonly property string pageName: "UnlockPage.qml"
 
-    onStatusChanged: {
-        if (status === PageStatus.Deactivating) { passwordField.text = "" }
+    // Start in PIN mode when a PIN is set up; the "Use master password" link
+    // switches to the password field. When no PIN exists, only the password
+    // field is shown. This is presentation only — the C++ side decides which
+    // unlock actually succeeds.
+    property bool usePassword: !App.pinEnabled
+
+    function clearFields() {
+        passwordField.text = ""
+        pinField.text = ""
     }
 
-    Component.onDestruction: passwordField.text = ""
+    onStatusChanged: {
+        if (status === PageStatus.Deactivating) { clearFields() }
+    }
+
+    Component.onDestruction: clearFields()
 
     // remorseAction() only exists on ListItem — a pulley MenuItem needs an
     // explicit RemorsePopup.
@@ -56,8 +67,29 @@ Page {
                 color: Theme.secondaryHighlightColor
             }
 
+            // --- PIN entry (default when a PIN is set up) ---
+            PasswordField {
+                id: pinField
+                visible: !page.usePassword
+                width: parent.width
+                label: qsTr("PIN")
+                inputMethodHints: Qt.ImhDigitsOnly | Qt.ImhNoPredictiveText | Qt.ImhSensitiveData
+                EnterKey.iconSource: "image://theme/icon-m-enter-accept"
+                EnterKey.onClicked: App.unlockWithPin(text)
+            }
+
+            Button {
+                visible: !page.usePassword
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Unlock")
+                enabled: !App.busy && pinField.text.length > 0
+                onClicked: App.unlockWithPin(pinField.text)
+            }
+
+            // --- master password entry ---
             PasswordField {
                 id: passwordField
+                visible: page.usePassword
                 width: parent.width
                 label: qsTr("Master password")
                 EnterKey.iconSource: "image://theme/icon-m-enter-accept"
@@ -65,10 +97,31 @@ Page {
             }
 
             Button {
+                visible: page.usePassword
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Unlock")
                 enabled: !App.busy && passwordField.text.length > 0
                 onClicked: App.unlock(passwordField.text)
+            }
+
+            // Toggle between the two. Hidden when no PIN exists (nothing to
+            // toggle to).
+            BackgroundItem {
+                visible: App.pinEnabled
+                width: parent.width
+                height: toggleLabel.implicitHeight + Theme.paddingMedium * 2
+                onClicked: {
+                    page.clearFields()
+                    page.usePassword = !page.usePassword
+                }
+                Label {
+                    id: toggleLabel
+                    anchors.centerIn: parent
+                    text: page.usePassword ? qsTr("Use PIN")
+                                           : qsTr("Use master password")
+                    color: Theme.highlightColor
+                    font.pixelSize: Theme.fontSizeSmall
+                }
             }
 
             BusyIndicator {

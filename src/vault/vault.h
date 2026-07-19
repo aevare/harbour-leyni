@@ -65,6 +65,14 @@ public:
     bool reloadSync(const QByteArray &rawJson, QString *errorMessage,
                     int *skippedCiphers = nullptr);
 
+    // True if `masterKey` decrypts the currently-loaded protected user key —
+    // i.e. it is the correct master key for this account's sync blob. Read
+    // only: does not change lock state or touch the vault's own keys. Used to
+    // confirm a re-entered master password before wrapping it under a PIN.
+    // Requires a loaded sync blob; returns false (with a message) otherwise.
+    bool verifyMasterKey(const Crypto::SecureBytes &masterKey,
+                         QString *errorMessage) const;
+
     void lock();
     bool isLocked() const { return m_locked; }
 

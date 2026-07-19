@@ -20,6 +20,7 @@ add_library(bitvault-crypto STATIC
     encstring.cpp
     kdf.cpp
     keys.cpp
+    pinwrap.cpp
     securebytes.cpp
     totp.cpp
 )

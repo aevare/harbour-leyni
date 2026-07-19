@@ -10,6 +10,7 @@ void runKdfBoundsTests();
 void runVectorTests();
 void runRsaTests();
 void runTotpTests();
+void runPinWrapTests();
 
 int main()
 {
@@ -29,6 +30,8 @@ int main()
     std::printf("rsa oaep: OK\n");
     runTotpTests();
     std::printf("totp: OK\n");
+    runPinWrapTests();
+    std::printf("pin wrap: OK\n");
 
     std::printf("crypto_tests: all checks passed\n");
     return 0;

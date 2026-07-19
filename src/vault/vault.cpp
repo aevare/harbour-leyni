@@ -174,6 +174,26 @@ bool Vault::unlockWithMasterKey(Crypto::SecureBytes masterKey,
     return true;
 }
 
+bool Vault::verifyMasterKey(const Crypto::SecureBytes &masterKey,
+                            QString *errorMessage) const
+{
+    if (m_data.profileKey.empty()) {
+        *errorMessage = QStringLiteral("no vault data loaded");
+        return false;
+    }
+    try {
+        SymmetricKey stretched = Crypto::stretchMasterKey(masterKey);
+        // Throws on MAC mismatch ⇒ wrong master key. The decrypted bytes are
+        // dropped immediately (SecureBytes destructor zeroes them).
+        Crypto::decryptAes256CbcHmac(EncString::parse(m_data.profileKey),
+                                     stretched);
+        return true;
+    } catch (const CryptoError &) {
+        *errorMessage = QStringLiteral("wrong master password");
+        return false;
+    }
+}
+
 bool Vault::reloadSync(const QByteArray &rawJson, QString *errorMessage,
                        int *skippedCiphers)
 {

@@ -25,6 +25,7 @@
 #include <memory>
 
 #include "apiclient.h"
+#include "pinstore.h"
 #include "securebytes.h"
 #include "syncstore.h"
 #include "vault.h"
@@ -39,6 +40,15 @@ namespace Ui {
 struct DerivedSecrets {
     Crypto::SecureBytes masterKey;
     QByteArray passwordHashB64;
+    QString error;
+};
+
+// Result of an off-thread PIN operation (Argon2id is slow, so wrap/unwrap
+// never run on the GUI thread). Exactly one of masterKey/blob is populated on
+// success; error is set on failure.
+struct PinResult {
+    Crypto::SecureBytes masterKey;  // set by unwrap (the recovered master key)
+    QByteArray blob;                // set by wrap (serialized PinWrappedKey)
     QString error;
 };
 
@@ -60,6 +70,9 @@ class AppController : public QObject
                    WRITE setClipboardClearSeconds NOTIFY settingsChanged)
     Q_PROPERTY(bool lockOnMinimize READ lockOnMinimize
                    WRITE setLockOnMinimize NOTIFY settingsChanged)
+    // True when a PIN-wrapped master key exists on disk: the unlock screen
+    // offers PIN entry, and Settings shows the feature as enabled.
+    Q_PROPERTY(bool pinEnabled READ pinEnabled NOTIFY pinChanged)
 
 public:
     explicit AppController(QObject *parent = nullptr);
@@ -79,6 +92,17 @@ public:
     void setClipboardClearSeconds(int seconds);
     bool lockOnMinimize() const;
     void setLockOnMinimize(bool on);
+    bool pinEnabled() const;
+
+    // Enable PIN unlock: re-derives the master key from the given master
+    // password (verified against the loaded vault), wraps it under `pin`, and
+    // stores the blob. The master password is required so this is an
+    // explicitly authorized action and the master key need not be kept in
+    // memory between unlocks.
+    Q_INVOKABLE void enablePin(const QString &masterPassword,
+                               const QString &pin);
+    // Forget the PIN-wrapped key; next unlock needs the master password.
+    Q_INVOKABLE void disablePin();
 
     // --- account/session ---
     Q_INVOKABLE void configureAccount(const QString &serverUrl,
@@ -89,6 +113,11 @@ public:
     Q_INVOKABLE void requestEmailCode();
     Q_INVOKABLE void cancelLogin();
     Q_INVOKABLE void unlock(const QString &password);
+    // Unlock with the PIN: unwraps the stored master key (Argon2id off-thread)
+    // and reuses the normal master-key unlock path. A wrong PIN counts toward
+    // the attempt limit; the limit's worth of failures wipes the wrapped key
+    // and forces a full master-password unlock.
+    Q_INVOKABLE void unlockWithPin(const QString &pin);
     Q_INVOKABLE void lock();
     Q_INVOKABLE void syncNow();
     // Forgets tokens and the local blob; back to "login" (keeps account).
@@ -114,6 +143,7 @@ signals:
     void accountChanged();
     void vaultChanged();
     void settingsChanged();
+    void pinChanged();
     // One-shot toast requests for QML (e.g. "Copied — clears in 30 s").
     void notify(const QString &message);
 
@@ -131,6 +161,20 @@ private:
     void deriveAsync(const QString &password, const Crypto::KdfParams &params,
                      std::function<void(std::shared_ptr<DerivedSecrets>)> next);
 
+    // Runs a PIN wrap/unwrap (both Argon2id-bound) off-thread, then `next` on
+    // the GUI thread with the result. `work` must be self-contained (capture
+    // only shared_ptrs); it runs on a worker thread.
+    void runPinWorker(std::function<std::shared_ptr<PinResult>()> work,
+                      std::function<void(std::shared_ptr<PinResult>)> next);
+
+    // Persisted count of consecutive failed PIN attempts; wiping the wrapped
+    // key at the limit survives an app restart (an attacker cannot reset it by
+    // relaunching). kMaxPinFailures lives in the .cpp.
+    int pinFailures() const;
+    void setPinFailures(int count);
+    // Delete the wrapped key + reset the counter, then notify QML.
+    void forgetPin();
+
     void finishLogin(const Api::TokenResponse &token);
     void applySyncBlob(const QByteArray &blob, bool freshLogin);
     void refreshAndSync(bool freshLogin);
@@ -142,6 +186,7 @@ private:
     Vault::Vault m_vault;
     Vault::VaultListModel m_model;
     Vault::SyncStore m_syncStore;
+    Vault::PinStore m_pinStore;
 
     QString m_state;
     bool m_busy = false;
@@ -160,6 +205,7 @@ private:
     QTimer m_clipboardTimer;
 
     QFutureWatcher<std::shared_ptr<DerivedSecrets>> m_deriveWatcher;
+    QFutureWatcher<std::shared_ptr<PinResult>> m_pinWatcher;
 };
 
 } // namespace Ui

@@ -187,7 +187,13 @@ and SECURITY.md.
 
 1. Write support: edit/create/delete items (uses the Phase 1 encrypt path)
 2. Password/passphrase generator
-3. PIN unlock as a **documented weaker option** (PIN-wrapped key; threat model in SECURITY.md)
+3. ~~PIN unlock as a **documented weaker option** (PIN-wrapped key; threat model
+   in SECURITY.md)~~ — **done 2026-07-19** (pulled forward at Ævar's request
+   after the daily-use period). Master key wrapped by an Argon2id-derived KEK
+   from the PIN (t=8, 64 MiB, p=4); opt-in; 3 wrong PINs wipe the wrapped key;
+   dropped on sign-out and on server-side key change. Offline-brute-force
+   exposure documented in SECURITY.md → "PIN unlock". Code: `src/crypto/pinwrap.*`,
+   `src/vault/pinstore.*`, KATs in `tests/crypto/pinwrap_tests.cpp`.
 4. Organizations/collections decryption (RSA path from Phase 1)
 5. Attachments (download/decrypt)
 6. Bitwarden Send

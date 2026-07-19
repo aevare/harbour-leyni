@@ -29,6 +29,7 @@ only, no Qt GUI, no networking, no file I/O):
 | `kdf.{h,cpp}` | PBKDF2-SHA256 / Argon2id master-key derivation, server-parameter bounds checks |
 | `keys.{h,cpp}` | HKDF stretch, master password hash, RSA-OAEP org-key unwrap |
 | `encstring.{h,cpp}` | EncString parse/decrypt/encrypt; MAC-then-decrypt |
+| `pinwrap.{h,cpp}` | opt-in PIN unlock: Argon2id KEK + EncString wrap of the master key (see "PIN unlock" below) |
 | `totp.{h,cpp}` | RFC 6238 TOTP |
 
 Layering is strictly one-way (`qml/` → `src/ui/` → `src/vault/` → `src/api/` →
@@ -119,6 +120,7 @@ All paths are Sailjail-private (inaccessible to other sandboxed apps).
 | Sync blob (vault ciphertext) | `~/.local/share/xyz.eggerts/harbour-bitvault/sync.json` | End-to-end encrypted by the Bitwarden scheme; stored byte-for-byte as the server sent it. Written atomically via `QSaveFile`. |
 | OAuth refresh token | QSettings (`~/.config/harbour-bitvault/`) | **Plaintext.** See note below. |
 | KDF parameters (type, iterations, memory, lanes) | QSettings | Plaintext; not secret (the server hands them to anyone who asks prelogin). Enables offline unlock. |
+| PIN-wrapped master key (only if PIN unlock is enabled) | `~/.local/share/xyz.eggerts/harbour-bitvault/pin.dat` | The master key encrypted under a key derived from your PIN alone (Argon2id + AES-256-CBC-HMAC). **Offline-brute-forceable** — see "PIN unlock" below. Absent unless you opt in; deleted on sign-out and after too many wrong PINs. |
 | Server URL, account email, device ID, UI settings | QSettings | Plaintext; not secret. |
 | Access token | memory only | Discarded on exit. |
 | Master password, master key, user/org keys, decrypted items | **never written to disk** | — |
@@ -148,10 +150,57 @@ vault breach.
 | Vault data | EncString type 2: AES-256-CBC + HMAC-SHA256 (encrypt-then-MAC, constant-time verify before decrypt) | libcrypto |
 | Org key wrapping | EncString type 4: RSA-2048-OAEP-SHA1 | libcrypto |
 | TOTP | RFC 6238 / RFC 4226 (SHA-1/256/512) | libcrypto |
+| PIN key-encryption-key (opt-in) | Argon2id (t=8, 64 MiB, p=4, random 16 B salt) → AES-256-CBC + HMAC-SHA256 wrap of the master key | Argon2 reference impl + libcrypto (`src/crypto/pinwrap.cpp`) |
 
 These are Bitwarden's choices, not ours — a compatible client must implement
 exactly this. All other EncString types are rejected explicitly. Wrappers are
 thin and literal over `EVP_*`; there are no homegrown primitives.
+
+## PIN unlock (opt-in, deliberately weaker)
+
+PIN unlock is **off by default** and exists only to spare you from typing a long
+master password on every auto-lock during a day of use. Enabling it is a
+trade-off, stated plainly here so the choice is informed.
+
+**What it does.** When you enable it (Settings → PIN unlock), you re-enter your
+master password once. The app re-derives your 32-byte master key, verifies it
+against the vault, then wraps it: a key-encryption-key is derived from your PIN
+with Argon2id (t=8, 64 MiB, p=4, over a random 16-byte salt) and used to
+encrypt the master key with AES-256-CBC + HMAC-SHA256. The result is written to
+`pin.dat`. The PIN itself is never stored. On unlock, the PIN re-derives the
+key-encryption-key, the MAC is verified in constant time, and the master key is
+recovered and fed into the exact same unlock path a master-password unlock uses.
+
+**The exposure — read this.** `pin.dat` is on disk and survives reboot. Its
+security rests **entirely on the entropy of your PIN**, which is small: a 4-digit
+PIN is about 13 bits, a 6-digit PIN about 20 bits. An attacker who copies
+`pin.dat` off the device (physical access, a backup, forensic imaging) can try
+every PIN **offline**, as fast as their hardware runs Argon2id — the 3-strikes
+limit below does *not* apply offline, it only guards the running app. The
+aggressive Argon2id parameters raise the per-guess cost (tens of thousands of
+guesses, not billions, per second on a PC), but a short numeric PIN is still
+brute-forceable in a practical amount of time.
+
+So: **PIN unlock protects against casual access** — a glance over your shoulder,
+a borrowed or briefly-unattended phone — **not against a forensic adversary who
+images your storage.** If that adversary is in your threat model, do not enable
+PIN unlock; use the master password.
+
+**Limits that do apply on-device.**
+
+- After **3 consecutive wrong PINs**, the app deletes `pin.dat` and requires a
+  full master-password unlock. The counter is persisted, so it cannot be reset
+  by restarting the app. (Again: this bounds *online* guessing only.)
+- The wrapped key is deleted on **sign-out**, and dropped if the vault's key
+  no longer matches it (e.g. you changed your master password on the server) —
+  in both cases the master password is required.
+- The master key is not kept in memory between unlocks; enabling PIN requires
+  the master password precisely so it can be re-derived on demand rather than
+  retained.
+
+The whole scheme is one short file — `src/crypto/pinwrap.{h,cpp}` — built from
+the already-audited EncString and Argon2id primitives, so a reviewer can read it
+end to end.
 
 ## Platform limitations (documented, not worked around)
 
