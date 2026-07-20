@@ -1,7 +1,7 @@
 Name:       harbour-leyni
 
 Summary:    Native, open-source Bitwarden client for Sailfish OS
-Version:    0.1.0
+Version:    0.1.1
 Release:    1
 # GPL-3.0-or-later; tag uses Fedora-style form required by the Sailfish rpmlint allowlist
 License:    GPLv3+
