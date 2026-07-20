@@ -8,7 +8,7 @@
 #include "base64.h"
 #include "crypto.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 namespace {
@@ -203,4 +203,4 @@ SecureBytes decryptRsaOaepSha1(const EncString &enc,
 }
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

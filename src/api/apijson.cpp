@@ -6,7 +6,7 @@
 #include <QJsonValue>
 #include <QUrlQuery>
 
-namespace BitVault {
+namespace Leyni {
 namespace Api {
 
 namespace {
@@ -249,4 +249,4 @@ ApiError parseTokenError(int httpStatus, const QByteArray &body)
 }
 
 } // namespace Api
-} // namespace BitVault
+} // namespace Leyni

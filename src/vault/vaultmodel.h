@@ -22,7 +22,7 @@
 
 #include "cipheritem.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Vault {
 
 class Vault;
@@ -89,4 +89,4 @@ private:
 };
 
 } // namespace Vault
-} // namespace BitVault
+} // namespace Leyni

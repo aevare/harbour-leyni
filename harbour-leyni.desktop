@@ -1,11 +1,11 @@
 [Desktop Entry]
 Type=Application
 X-Nemo-Application-Type=silica-qt5
-Icon=harbour-bitvault
-Exec=harbour-bitvault
-Name=BitVault
+Icon=harbour-leyni
+Exec=harbour-leyni
+Name=Leyni
 
 [X-Sailjail]
 OrganizationName=xyz.eggerts
-ApplicationName=harbour-bitvault
+ApplicationName=harbour-leyni
 Permissions=Internet

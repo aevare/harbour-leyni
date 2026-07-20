@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 // Zeroes n bytes at p in a way the compiler must not optimize away.
@@ -48,4 +48,4 @@ private:
 };
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

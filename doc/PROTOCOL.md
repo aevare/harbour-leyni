@@ -1,6 +1,6 @@
-# BitVault — Bitwarden Protocol Notes
+# Leyni — Bitwarden Protocol Notes
 
-Working reference for the subset of the Bitwarden protocol BitVault implements.
+Working reference for the subset of the Bitwarden protocol Leyni implements.
 Primary sources, in order of usefulness:
 
 - [rbw](https://github.com/doy/rbw) — clean-room Rust client, best readable reference
@@ -56,7 +56,7 @@ a client id (e.g. `cli` or `mobile`), and device identification fields
 - Success → `access_token` (JWT, short-lived), `refresh_token`, `Key`
   (protected symmetric key), `PrivateKey`.
 - 2FA required → error response listing available providers; retry with
-  `twoFactorProvider` + `twoFactorToken`. Providers BitVault supports:
+  `twoFactorProvider` + `twoFactorToken`. Providers Leyni supports:
   0 = authenticator TOTP, 1 = email. WebAuthn (7) is out of scope.
 - Bitwarden cloud may require new-device email verification and can serve captcha
   challenges; API-key login (`grant_type=client_credentials`, then unlock locally
@@ -89,17 +89,17 @@ a clear error rather than mis-decrypting.
   with that org's key instead of the account key.
 - `folders[]`, `collections[]`, `sends[]`, `policies[]`
 
-BitVault stores this response verbatim on disk (it is already E2E-encrypted) and
+Leyni stores this response verbatim on disk (it is already E2E-encrypted) and
 decrypts only in memory after unlock.
 
 ## Writes (create / edit / soft-delete)
 
 All three are Bearer-authenticated against the `/api` host (like sync), and carry
 a **CipherRequestModel** JSON body (except soft-delete, which has no body). Every
-sensitive field in the body is already an EncString — BitVault encrypts in the
+sensitive field in the body is already an EncString — Leyni encrypts in the
 vault layer before the body reaches the transport.
 
-CipherRequestModel (camelCase), for the two types BitVault writes today:
+CipherRequestModel (camelCase), for the two types Leyni writes today:
 
 ```
 { "type": 1|2, "name": <EncString>, "notes": <EncString>|null,
@@ -109,7 +109,7 @@ CipherRequestModel (camelCase), for the two types BitVault writes today:
              "totp": <EncString>|null, "uris": [ { "uri": <EncString>, "match": <int>|null } ] },
   // type 2:
   "secureNote": { "type": 0 },
-  // preserved verbatim on edit, not modeled by BitVault:
+  // preserved verbatim on edit, not modeled by Leyni:
   "fields": [...], "passwordHistory": [...],
   "lastKnownRevisionDate": <iso8601>   // edit only, optimistic concurrency
 }
@@ -117,15 +117,15 @@ CipherRequestModel (camelCase), for the two types BitVault writes today:
 
 - **Create** (personal vault): `POST /api/ciphers`. New items are encrypted
   directly under the user key — no per-item key.
-- **Edit**: `PUT /api/ciphers/{id}`. BitVault starts from the item's *original*
+- **Edit**: `PUT /api/ciphers/{id}`. Leyni starts from the item's *original*
   sync JSON, overwrites only the changed fields with freshly-encrypted EncStrings,
   strips response-only keys (`id`, `object`, `revisionDate`, …), and sets
   `lastKnownRevisionDate`. This preserves fields the client does not model
   (password history, custom fields, extra URIs).
 - **Soft-delete**: `PUT /api/ciphers/{id}/delete` (a PUT, not an HTTP DELETE) —
   moves the item to Trash, recoverable from the web vault. Trashed ciphers come
-  back in `/api/sync` with a non-null `deletedDate`; BitVault hides those.
-- After any write, BitVault re-syncs and reloads rather than patching local state.
+  back in `/api/sync` with a non-null `deletedDate`; Leyni hides those.
+- After any write, Leyni re-syncs and reloads rather than patching local state.
 
 Not yet implemented: card/identity create/edit, organization-item creation,
 attachments, restore-from-trash. Request-model details verified against rbw and
@@ -143,5 +143,5 @@ SHA-1, 6 digits, 30 s; honor URI parameters when present).
 cd dev && docker compose up -d     # Vaultwarden on http://localhost:8000
 ```
 
-Create a test account via its web vault, then point BitVault at the base URL.
+Create a test account via its web vault, then point Leyni at the base URL.
 All integration tests target this before touching bitwarden.com.

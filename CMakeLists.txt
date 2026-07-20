@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(harbour-bitvault C CXX)
+project(harbour-leyni C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,47 +33,47 @@ if(BUILD_APP)
         OWNER_READ OWNER_WRITE OWNER_EXECUTE
         GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-    add_executable(harbour-bitvault
+    add_executable(harbour-leyni
         src/main.cpp
         src/ui/appcontroller.cpp
     )
-    target_compile_definitions(harbour-bitvault PRIVATE
+    target_compile_definitions(harbour-leyni PRIVATE
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>
     )
     # No $<BUILD_INTERFACE:> genex here: on the SFOS 5.0 target's CMake it
     # mangles the first pkg-config dir into a build-dir-relative path.
-    target_include_directories(harbour-bitvault PRIVATE ${SAILFISH_INCLUDE_DIRS})
-    target_link_libraries(harbour-bitvault
+    target_include_directories(harbour-leyni PRIVATE ${SAILFISH_INCLUDE_DIRS})
+    target_link_libraries(harbour-leyni
         Qt5::Quick
         Qt5::Concurrent
-        bitvault-api
-        bitvault-vault
+        leyni-api
+        leyni-vault
         ${SAILFISH_LDFLAGS}
     )
 
-    install(TARGETS harbour-bitvault RUNTIME DESTINATION bin)
+    install(TARGETS harbour-leyni RUNTIME DESTINATION bin)
     # Explicit 755/644: install(DIRECTORY) otherwise inherits host-side dir
     # permissions (775 here), which rpmlint rejects as non-standard-dir-perm.
     set(INSTALL_PERMS
         DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                               GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
-    install(DIRECTORY qml DESTINATION share/harbour-bitvault ${INSTALL_PERMS})
-    install(DIRECTORY translations DESTINATION share/harbour-bitvault ${INSTALL_PERMS}
+    install(DIRECTORY qml DESTINATION share/harbour-leyni ${INSTALL_PERMS})
+    install(DIRECTORY translations DESTINATION share/harbour-leyni ${INSTALL_PERMS}
             FILES_MATCHING PATTERN "*.qm")
-    install(FILES harbour-bitvault.desktop DESTINATION share/applications)
-    install(FILES icons/86x86/harbour-bitvault.png   DESTINATION share/icons/hicolor/86x86/apps)
-    install(FILES icons/108x108/harbour-bitvault.png DESTINATION share/icons/hicolor/108x108/apps)
-    install(FILES icons/128x128/harbour-bitvault.png DESTINATION share/icons/hicolor/128x128/apps)
-    install(FILES icons/172x172/harbour-bitvault.png DESTINATION share/icons/hicolor/172x172/apps)
+    install(FILES harbour-leyni.desktop DESTINATION share/applications)
+    install(FILES icons/86x86/harbour-leyni.png   DESTINATION share/icons/hicolor/86x86/apps)
+    install(FILES icons/108x108/harbour-leyni.png DESTINATION share/icons/hicolor/108x108/apps)
+    install(FILES icons/128x128/harbour-leyni.png DESTINATION share/icons/hicolor/128x128/apps)
+    install(FILES icons/172x172/harbour-leyni.png DESTINATION share/icons/hicolor/172x172/apps)
 
     FILE(GLOB TsFiles "translations/*.ts")
     FILE(GLOB_RECURSE QmlFiles "qml/*.qml")
     add_custom_target(distfiles
         SOURCES
-            harbour-bitvault.desktop
-            rpm/harbour-bitvault.changes
-            rpm/harbour-bitvault.spec
+            harbour-leyni.desktop
+            rpm/harbour-leyni.changes
+            rpm/harbour-leyni.spec
             ${QmlFiles}
             ${TsFiles})
 endif()

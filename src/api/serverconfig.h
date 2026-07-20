@@ -5,7 +5,7 @@
 
 #include <QString>
 
-namespace BitVault {
+namespace Leyni {
 namespace Api {
 
 struct ServerConfig {
@@ -33,4 +33,4 @@ struct ServerConfig {
 };
 
 } // namespace Api
-} // namespace BitVault
+} // namespace Leyni

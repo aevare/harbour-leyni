@@ -9,7 +9,7 @@ folder structure, and TOTP codes. This is the Phase 3 fixture described in
 The account holds no real data. Its credentials are public on purpose — that
 is the point: anyone can regenerate this fixture themselves and confirm it
 matches, or unlock it with the official Bitwarden CLI/clients to audit that
-BitVault's crypto reads it correctly.
+Leyni's crypto reads it correctly.
 
 ## Account
 
@@ -46,7 +46,7 @@ base32("12345678901234567890") = GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ
 
 Using the official test key means the resulting TOTP codes are the exact
 values published in RFC 4226 Appendix D / RFC 6238 Appendix B (e.g. `755224`
-at Unix time 29, `287082` at Unix time 59) — a reviewer can verify BitVault's
+at Unix time 29, `287082` at Unix time 59) — a reviewer can verify Leyni's
 TOTP implementation against the RFCs directly, with no trust required in how
 the fixture was produced.
 
@@ -70,7 +70,7 @@ IDs and timestamps each time. Regenerate it like this:
    server in one container (the binary needs the container's Qt/OpenSSL
    runtime, so build and run must share it; same image CI uses):
    ```
-   cd /path/to/harbour-bitvault
+   cd /path/to/harbour-leyni
    docker run --rm --network host -v "$(pwd)":/work -w /work ubuntu:24.04 bash -c '
      apt-get update &&
      apt-get install -y build-essential cmake libssl-dev qtbase5-dev &&

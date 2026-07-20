@@ -25,12 +25,12 @@ Page {
             width: page.width
             spacing: Theme.paddingLarge
 
-            PageHeader { title: qsTr("BitVault") }
+            PageHeader { title: qsTr("Leyni") }
 
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                text: qsTr("BitVault — unofficial Bitwarden client")
+                text: qsTr("Leyni — unofficial Bitwarden client")
                 color: Theme.secondaryHighlightColor
                 wrapMode: Text.WordWrap
             }

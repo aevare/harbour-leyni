@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 std::string base64Encode(const uint8_t *data, size_t len);
@@ -16,4 +16,4 @@ std::string base64Encode(const uint8_t *data, size_t len);
 std::vector<uint8_t> base64Decode(const std::string &text);
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

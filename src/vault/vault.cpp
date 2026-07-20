@@ -11,7 +11,7 @@
 #include "encstring.h"
 #include "totp.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Vault {
 
 namespace {
@@ -771,4 +771,4 @@ QByteArray Vault::buildUpdateBody(const QString &itemId,
 }
 
 } // namespace Vault
-} // namespace BitVault
+} // namespace Leyni

@@ -4,7 +4,7 @@
 <context>
     <name>FirstPage</name>
     <message>
-        <source>BitVault</source>
+        <source>Leyni</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -15,7 +15,7 @@
 <context>
     <name>CoverPage</name>
     <message>
-        <source>BitVault</source>
+        <source>Leyni</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

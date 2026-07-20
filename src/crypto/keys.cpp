@@ -9,7 +9,7 @@
 
 #include "crypto.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 namespace {
@@ -131,4 +131,4 @@ SecureBytes rsaOaepSha1Decrypt(const SecureBytes &privateKeyDer,
 }
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

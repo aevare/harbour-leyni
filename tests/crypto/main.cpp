@@ -15,7 +15,7 @@ void runPasswordGenTests();
 
 int main()
 {
-    CHECK(std::string(BitVault::Crypto::version()) == "0.1.0");
+    CHECK(std::string(Leyni::Crypto::version()) == "0.1.0");
 
     runSecureBytesTests();
     std::printf("securebytes: OK\n");

@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-namespace BitVault {
+namespace Leyni {
 namespace Vault {
 
 enum class CipherType : int {
@@ -99,4 +99,4 @@ struct DecryptedItem {
 };
 
 } // namespace Vault
-} // namespace BitVault
+} // namespace Leyni

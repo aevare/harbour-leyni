@@ -1,4 +1,4 @@
-# BitVault — Test Strategy
+# Leyni — Test Strategy
 
 Tests here do double duty: they catch regressions, and they are the public
 *evidence* that the crypto is correct. A reviewer who trusts nothing else can

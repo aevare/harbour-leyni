@@ -6,7 +6,7 @@
 
 #include <sys/mman.h>
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 void secureZero(void *p, size_t n)
@@ -123,4 +123,4 @@ void SecureBytes::release()
 }
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

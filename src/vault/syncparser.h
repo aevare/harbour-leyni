@@ -11,7 +11,7 @@
 
 #include "cipheritem.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Vault {
 
 struct SyncData {
@@ -31,4 +31,4 @@ bool parseSyncJson(const QByteArray &json, SyncData *out,
                    QString *errorMessage, int *skippedCiphers = nullptr);
 
 } // namespace Vault
-} // namespace BitVault
+} // namespace Leyni

@@ -6,7 +6,7 @@
 #include <QTimer>
 #include <QUrl>
 
-namespace BitVault {
+namespace Leyni {
 namespace Api {
 
 namespace {
@@ -261,4 +261,4 @@ void ApiClient::softDeleteCipher(
 }
 
 } // namespace Api
-} // namespace BitVault
+} // namespace Leyni

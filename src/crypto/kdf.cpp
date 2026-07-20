@@ -7,7 +7,7 @@
 
 #include "crypto.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 SecureBytes pbkdf2Sha256(const SecureBytes &password,
@@ -106,4 +106,4 @@ SecureBytes deriveMasterPasswordHash(const SecureBytes &masterKey,
 }
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

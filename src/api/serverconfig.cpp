@@ -1,6 +1,6 @@
 #include "serverconfig.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Api {
 
 ServerConfig ServerConfig::cloudUs()
@@ -32,4 +32,4 @@ ServerConfig ServerConfig::selfHosted(const QString &baseUrl)
 }
 
 } // namespace Api
-} // namespace BitVault
+} // namespace Leyni

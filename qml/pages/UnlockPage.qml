@@ -52,7 +52,7 @@ Page {
             width: page.width
             spacing: Theme.paddingLarge
 
-            PageHeader { title: qsTr("BitVault") }
+            PageHeader { title: qsTr("Leyni") }
 
             Image {
                 anchors.horizontalCenter: parent.horizontalCenter

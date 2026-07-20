@@ -12,7 +12,7 @@
 
 #include "securebytes.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 // A Bitwarden symmetric key: 32-byte AES key + 32-byte HMAC key.
@@ -41,4 +41,4 @@ SecureBytes rsaOaepSha1Decrypt(const SecureBytes &privateKeyDer,
                                const uint8_t *ciphertext, size_t len);
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

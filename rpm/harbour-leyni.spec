@@ -1,11 +1,11 @@
-Name:       harbour-bitvault
+Name:       harbour-leyni
 
 Summary:    Native, open-source Bitwarden client for Sailfish OS
 Version:    0.1.0
 Release:    1
 # GPL-3.0-or-later; tag uses Fedora-style form required by the Sailfish rpmlint allowlist
 License:    GPLv3+
-URL:        https://github.com/aevare/harbour-bitvault
+URL:        https://github.com/aevare/harbour-leyni
 Source0:    %{name}-%{version}.tar.bz2
 Requires:   sailfishsilica-qt5 >= 0.10.9
 BuildRequires:  pkgconfig(sailfishapp) >= 1.0.2
@@ -22,17 +22,17 @@ BuildRequires:  cmake
 Native, open-source Bitwarden client for Sailfish OS
 
 %if 0%{?_chum}
-Title: BitVault
+Title: Leyni
 Type: desktop-application
 DeveloperName: Ævar Eggertsson
 Categories:
  - Utility
 Custom:
-  Repo: https://github.com/aevare/harbour-bitvault
+  Repo: https://github.com/aevare/harbour-leyni
 Links:
-  Homepage: https://github.com/aevare/harbour-bitvault
-  Bugtracker: https://github.com/aevare/harbour-bitvault/issues
-PackageIcon: https://raw.githubusercontent.com/aevare/harbour-bitvault/main/icons/172x172/harbour-bitvault.png
+  Homepage: https://github.com/aevare/harbour-leyni
+  Bugtracker: https://github.com/aevare/harbour-leyni/issues
+PackageIcon: https://raw.githubusercontent.com/aevare/harbour-leyni/main/icons/172x172/harbour-leyni.png
 %endif
 
 

@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 class CryptoError : public std::runtime_error
@@ -21,4 +21,4 @@ public:
 const char *version();
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

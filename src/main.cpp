@@ -11,10 +11,10 @@
 int main(int argc, char *argv[])
 {
     std::unique_ptr<QGuiApplication> app(SailfishApp::application(argc, argv));
-    app->setOrganizationName(QStringLiteral("harbour-bitvault"));
-    app->setApplicationName(QStringLiteral("harbour-bitvault"));
+    app->setOrganizationName(QStringLiteral("harbour-leyni"));
+    app->setApplicationName(QStringLiteral("harbour-leyni"));
 
-    BitVault::Ui::AppController controller;
+    Leyni::Ui::AppController controller;
 
     std::unique_ptr<QQuickView> view(SailfishApp::createView());
     // The controller is the ONLY bridge between QML and the vault; QML gets
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     view->rootContext()->setContextProperty(QStringLiteral("App"),
                                             &controller);
     view->setSource(SailfishApp::pathTo(
-        QStringLiteral("qml/harbour-bitvault.qml")));
+        QStringLiteral("qml/harbour-leyni.qml")));
     view->show();
 
     return app->exec();

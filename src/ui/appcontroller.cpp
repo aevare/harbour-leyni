@@ -12,7 +12,7 @@
 #include "passwordgen.h"
 #include "pinwrap.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Ui {
 
 namespace {
@@ -56,8 +56,8 @@ Crypto::SecureBytes toSecure(const QString &text)
 
 AppController::AppController(QObject *parent)
     : QObject(parent)
-    , m_settings(QStringLiteral("harbour-bitvault"),
-                 QStringLiteral("harbour-bitvault"))
+    , m_settings(QStringLiteral("harbour-leyni"),
+                 QStringLiteral("harbour-leyni"))
     , m_api(Api::ServerConfig::cloudUs(), this)
     , m_vault(this)
     , m_model(&m_vault, this)
@@ -190,7 +190,7 @@ Api::DeviceInfo AppController::deviceInfo()
     }
     Api::DeviceInfo device;
     device.identifier = id;
-    device.name = QStringLiteral("Sailfish OS (BitVault)");
+    device.name = QStringLiteral("Sailfish OS (Leyni)");
     device.type = 8; // LinuxDesktop; see apijson.h
     return device;
 }
@@ -1066,4 +1066,4 @@ void AppController::handleAppStateChanged(Qt::ApplicationState state)
 }
 
 } // namespace Ui
-} // namespace BitVault
+} // namespace Leyni

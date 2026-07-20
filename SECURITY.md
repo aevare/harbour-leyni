@@ -1,6 +1,6 @@
 # Security
 
-BitVault is a native Bitwarden client for Sailfish OS. This document describes
+Leyni is a native Bitwarden client for Sailfish OS. This document describes
 what the app protects, how, and — just as importantly — what it cannot protect.
 It is written for a skeptical reviewer; nothing here is marketing.
 
@@ -10,7 +10,7 @@ file is — either way, please report it (see below).
 ## Reporting a vulnerability
 
 Please report suspected vulnerabilities privately via
-[GitHub private vulnerability reporting](https://github.com/aevare/harbour-bitvault/security/advisories/new)
+[GitHub private vulnerability reporting](https://github.com/aevare/harbour-leyni/security/advisories/new)
 rather than a public issue. You should receive a response within 7 days.
 Coordinated disclosure is appreciated; there is no bug bounty.
 
@@ -41,7 +41,7 @@ SDK vectors, with negative tests that must fail closed; see
 
 ## Threat model
 
-**BitVault defends against:**
+**Leyni defends against:**
 
 - **A compromised or malicious server.** The master password never leaves the
   device; only the derived authentication hash is sent. All vault data is
@@ -63,7 +63,7 @@ SDK vectors, with negative tests that must fail closed; see
 - **Other sandboxed apps.** All local state lives in Sailjail-private
   directories. The app requests only the `Internet` permission.
 
-**BitVault does NOT defend against:**
+**Leyni does NOT defend against:**
 
 - **A compromised device.** Root, or any process running as your user outside
   a sandbox, can read the app's files, read the clipboard, capture the
@@ -126,10 +126,10 @@ All paths are Sailjail-private (inaccessible to other sandboxed apps).
 
 | What | Where | Protection |
 |---|---|---|
-| Sync blob (vault ciphertext) | `~/.local/share/xyz.eggerts/harbour-bitvault/sync.json` | End-to-end encrypted by the Bitwarden scheme; stored byte-for-byte as the server sent it. Written atomically via `QSaveFile`. |
-| OAuth refresh token | QSettings (`~/.config/harbour-bitvault/`) | **Plaintext.** See note below. |
+| Sync blob (vault ciphertext) | `~/.local/share/xyz.eggerts/harbour-leyni/sync.json` | End-to-end encrypted by the Bitwarden scheme; stored byte-for-byte as the server sent it. Written atomically via `QSaveFile`. |
+| OAuth refresh token | QSettings (`~/.config/harbour-leyni/`) | **Plaintext.** See note below. |
 | KDF parameters (type, iterations, memory, lanes) | QSettings | Plaintext; not secret (the server hands them to anyone who asks prelogin). Enables offline unlock. |
-| PIN-wrapped master key (only if PIN unlock is enabled) | `~/.local/share/xyz.eggerts/harbour-bitvault/pin.dat` | The master key encrypted under a key derived from your PIN alone (Argon2id + AES-256-CBC-HMAC). **Offline-brute-forceable** — see "PIN unlock" below. Absent unless you opt in; deleted on sign-out and after too many wrong PINs. |
+| PIN-wrapped master key (only if PIN unlock is enabled) | `~/.local/share/xyz.eggerts/harbour-leyni/pin.dat` | The master key encrypted under a key derived from your PIN alone (Argon2id + AES-256-CBC-HMAC). **Offline-brute-forceable** — see "PIN unlock" below. Absent unless you opt in; deleted on sign-out and after too many wrong PINs. |
 | Server URL, account email, device ID, UI settings | QSettings | Plaintext; not secret. |
 | Access token | memory only | Discarded on exit. |
 | Master password, master key, user/org keys, decrypted items | **never written to disk** | — |

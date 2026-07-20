@@ -14,7 +14,7 @@ add_library(argon2 STATIC
 target_include_directories(argon2 PUBLIC ${CMAKE_SOURCE_DIR}/third_party/argon2)
 target_link_libraries(argon2 PUBLIC Threads::Threads)
 
-add_library(bitvault-crypto STATIC
+add_library(leyni-crypto STATIC
     base64.cpp
     crypto.cpp
     encstring.cpp
@@ -25,5 +25,5 @@ add_library(bitvault-crypto STATIC
     securebytes.cpp
     totp.cpp
 )
-target_include_directories(bitvault-crypto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(bitvault-crypto PUBLIC OpenSSL::Crypto argon2)
+target_include_directories(leyni-crypto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(leyni-crypto PUBLIC OpenSSL::Crypto argon2)

@@ -15,7 +15,7 @@
 class QNetworkAccessManager;
 class QNetworkReply;
 
-namespace BitVault {
+namespace Leyni {
 namespace Api {
 
 // Exactly one of value/error is meaningful: check error.isEmpty() first.
@@ -97,4 +97,4 @@ private:
 };
 
 } // namespace Api
-} // namespace BitVault
+} // namespace Leyni
