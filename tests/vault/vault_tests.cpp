@@ -28,8 +28,8 @@
 
 #include "../check.h"
 
-using namespace BitVault::Crypto;
-using namespace BitVault::Vault;
+using namespace Leyni::Crypto;
+using namespace Leyni::Vault;
 
 namespace {
 

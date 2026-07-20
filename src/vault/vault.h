@@ -32,7 +32,7 @@
 #include "cipheritem.h"
 #include "syncparser.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Vault {
 
 class Vault : public QObject
@@ -164,4 +164,4 @@ private:
 };
 
 } // namespace Vault
-} // namespace BitVault
+} // namespace Leyni

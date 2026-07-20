@@ -7,7 +7,7 @@
 
 #include "crypto.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 namespace {
@@ -126,4 +126,4 @@ std::string generatePassword(const PasswordOptions &opts)
 }
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

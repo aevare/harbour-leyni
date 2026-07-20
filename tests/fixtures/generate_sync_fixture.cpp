@@ -48,8 +48,8 @@
 #include "keys.h"
 #include "securebytes.h"
 
-using namespace BitVault::Api;
-using namespace BitVault::Crypto;
+using namespace Leyni::Api;
+using namespace Leyni::Crypto;
 
 namespace {
 

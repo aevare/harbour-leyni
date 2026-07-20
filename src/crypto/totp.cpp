@@ -5,7 +5,7 @@
 
 #include "crypto.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 std::vector<uint8_t> base32Decode(const std::string &text)
@@ -107,4 +107,4 @@ std::string totp(const SecureBytes &key, uint64_t unixTime,
 }
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

@@ -10,7 +10,7 @@ CoverBackground {
 
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "BitVault"
+            text: "Leyni"
             font.pixelSize: Theme.fontSizeLarge
             color: Theme.primaryColor
         }

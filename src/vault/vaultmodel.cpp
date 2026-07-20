@@ -6,7 +6,7 @@
 
 #include "vault.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Vault {
 
 VaultListModel::VaultListModel(Vault *vault, QObject *parent)
@@ -192,4 +192,4 @@ void VaultListModel::updateHasFavorites()
 }
 
 } // namespace Vault
-} // namespace BitVault
+} // namespace Leyni

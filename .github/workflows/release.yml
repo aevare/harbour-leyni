@@ -3,7 +3,7 @@ name: Release
 # Tag-driven release: push a tag like v0.1.0 (must match the spec Version) and
 # this builds stripped RPMs for the supported targets and publishes a GitHub
 # Release with them attached. The binaries are stripped by the `strip` step in
-# rpm/harbour-bitvault.spec, so no `mb2 -d` is needed here.
+# rpm/harbour-leyni.spec, so no `mb2 -d` is needed here.
 on:
   push:
     tags:
@@ -17,7 +17,7 @@ jobs:
       - name: Tag must match spec Version
         run: |
           spec_version=$(sed -n 's/^Version:[[:space:]]*//p' \
-              rpm/harbour-bitvault.spec | head -n1 | tr -d '[:space:]')
+              rpm/harbour-leyni.spec | head -n1 | tr -d '[:space:]')
           tag_version="${GITHUB_REF_NAME#v}"
           echo "spec Version: $spec_version   tag: $GITHUB_REF_NAME"
           if [ "$spec_version" != "$tag_version" ]; then
@@ -26,8 +26,16 @@ jobs:
             exit 1
           fi
 
-  build:
+  crypto-tests:
     needs: verify
+    uses: ./.github/workflows/crypto-tests.yml
+
+  api-tests:
+    needs: verify
+    uses: ./.github/workflows/api-tests.yml
+
+  build:
+    needs: [verify, crypto-tests, api-tests]
     runs-on: ubuntu-latest
     strategy:
       matrix:

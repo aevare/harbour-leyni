@@ -53,8 +53,8 @@
 
 #include "../check.h"
 
-using namespace BitVault::Api;
-using namespace BitVault::Crypto;
+using namespace Leyni::Api;
+using namespace Leyni::Crypto;
 
 namespace {
 
@@ -95,7 +95,7 @@ struct HttpResponse {
 
 // Plain QNetworkAccessManager POST with a timeout — used only for account
 // registration, which is not part of the app's runtime API surface (users
-// register through the web vault or another client; BitVault only ever
+// register through the web vault or another client; Leyni only ever
 // logs in). Kept local to this test rather than added to src/api/.
 HttpResponse postJson(QNetworkAccessManager *net, const QString &url,
                       const QByteArray &json)
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
 
     QJsonObject registerBody;
     registerBody.insert(QStringLiteral("email"), email);
-    registerBody.insert(QStringLiteral("name"), QStringLiteral("BitVault IT"));
+    registerBody.insert(QStringLiteral("name"), QStringLiteral("Leyni IT"));
     registerBody.insert(QStringLiteral("masterPasswordHash"),
                         QString::fromUtf8(serverHashB64));
     registerBody.insert(QStringLiteral("key"),
@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
     }
 
     const DeviceInfo device{newUuidString(),
-                            QStringLiteral("bitvault-integration-test"), 8};
+                            QStringLiteral("leyni-integration-test"), 8};
     const TwoFactorRequest noTwoFactor;
 
     // --- e. login with wrong hash ---
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
                 : profile.value(QStringLiteral("Key")).toString();
         CHECK(profileKey == loginKey);
 
-        BitVault::Vault::SyncStore store(syncDir.path());
+        Leyni::Vault::SyncStore store(syncDir.path());
         CHECK(store.save(result.value));
         CHECK(store.exists());
         CHECK(store.load() == result.value);
@@ -437,16 +437,16 @@ int main(int argc, char *argv[])
     // Vault build methods and ApiClient cipher calls. Proves the write path
     // interoperates with the server and stays decryptable. ---
     {
-        auto findItem = [](const BitVault::Vault::Vault &v, const QString &name)
-            -> const BitVault::Vault::DecryptedItem * {
-            for (const BitVault::Vault::DecryptedItem &it : v.items()) {
+        auto findItem = [](const Leyni::Vault::Vault &v, const QString &name)
+            -> const Leyni::Vault::DecryptedItem * {
+            for (const Leyni::Vault::DecryptedItem &it : v.items()) {
                 if (it.name == name) {
                     return &it;
                 }
             }
             return nullptr;
         };
-        auto resync = [&](BitVault::Vault::Vault *v) {
+        auto resync = [&](Leyni::Vault::Vault *v) {
             bool to = false;
             Result<QByteArray> s = waitFor<QByteArray>(
                 [&](std::function<void(Result<QByteArray>)> cb) {
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
         };
 
         // A vault unlocked from the account's own master key.
-        BitVault::Vault::Vault vault;
+        Leyni::Vault::Vault vault;
         {
             bool to = false;
             Result<QByteArray> s = waitFor<QByteArray>(
@@ -489,7 +489,7 @@ int main(int argc, char *argv[])
 
         QString buildErr;
         const QByteArray createBody = vault.buildCreateBody(
-            BitVault::Vault::CipherType::Login, fields, &buildErr);
+            Leyni::Vault::CipherType::Login, fields, &buildErr);
         CHECK(!createBody.isEmpty());
         {
             bool to = false;
@@ -502,7 +502,7 @@ int main(int argc, char *argv[])
             CHECK(r.ok());
         }
         resync(&vault);
-        const BitVault::Vault::DecryptedItem *created =
+        const Leyni::Vault::DecryptedItem *created =
             findItem(vault, QStringLiteral("IT Login"));
         CHECK(created != nullptr);
         CHECK(created->username == QStringLiteral("it@x.test"));
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
         }
         resync(&vault);
         CHECK(findItem(vault, QStringLiteral("IT Login")) == nullptr);
-        const BitVault::Vault::DecryptedItem *edited =
+        const Leyni::Vault::DecryptedItem *edited =
             findItem(vault, QStringLiteral("IT Login v2"));
         CHECK(edited != nullptr);
         {

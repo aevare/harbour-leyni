@@ -5,7 +5,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
-namespace BitVault {
+namespace Leyni {
 namespace Vault {
 
 namespace {
@@ -234,4 +234,4 @@ bool parseSyncJson(const QByteArray &json, SyncData *out,
 }
 
 } // namespace Vault
-} // namespace BitVault
+} // namespace Leyni

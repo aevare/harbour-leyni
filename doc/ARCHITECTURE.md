@@ -1,4 +1,4 @@
-# BitVault — Architecture
+# Leyni — Architecture
 
 The design goal is **auditability**: a reviewer must be able to answer "is my master
 password handled correctly?" by reading a few hundred lines, and be able to verify that
@@ -60,7 +60,7 @@ Rules:
 The `/api/sync` response is stored **exactly as the server sent it** — it is already
 end-to-end encrypted by design. Nothing decrypted is ever written to disk. The blob
 lives in the Sailjail-private data directory
-(`~/.local/share/<org>/harbour-bitvault/`), unreadable by other sandboxed apps.
+(`~/.local/share/<org>/harbour-leyni/`), unreadable by other sandboxed apps.
 The app requests only the `Internet` permission.
 
 ## Writes (create / edit / delete)

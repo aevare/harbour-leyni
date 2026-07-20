@@ -7,7 +7,7 @@
 #include <QByteArray>
 #include <QString>
 
-namespace BitVault {
+namespace Leyni {
 namespace Vault {
 
 class SyncStore
@@ -30,4 +30,4 @@ private:
 };
 
 } // namespace Vault
-} // namespace BitVault
+} // namespace Leyni

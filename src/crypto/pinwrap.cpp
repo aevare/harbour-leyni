@@ -8,7 +8,7 @@
 #include "kdf.h"
 #include "keys.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 namespace {
@@ -116,4 +116,4 @@ SecureBytes unwrapWithPin(const PinWrappedKey &wrapped, const SecureBytes &pin)
 }
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

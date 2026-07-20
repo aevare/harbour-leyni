@@ -1,12 +1,12 @@
-# BitVault
+# Leyni
 
 A fully native, open-source Bitwarden/Vaultwarden client for Sailfish OS — Qt/C++ and
 Silica QML only. No Node.js, no bundled Bitwarden CLI, no background scripts wrapping
 someone else's binary.
 
-[![Crypto tests](https://github.com/aevare/harbour-bitvault/actions/workflows/crypto-tests.yml/badge.svg)](https://github.com/aevare/harbour-bitvault/actions/workflows/crypto-tests.yml)
-[![API tests](https://github.com/aevare/harbour-bitvault/actions/workflows/api-tests.yml/badge.svg)](https://github.com/aevare/harbour-bitvault/actions/workflows/api-tests.yml)
-[![SFOS RPM build](https://github.com/aevare/harbour-bitvault/actions/workflows/sfos-build.yml/badge.svg)](https://github.com/aevare/harbour-bitvault/actions/workflows/sfos-build.yml)
+[![Crypto tests](https://github.com/aevare/harbour-leyni/actions/workflows/crypto-tests.yml/badge.svg)](https://github.com/aevare/harbour-leyni/actions/workflows/crypto-tests.yml)
+[![API tests](https://github.com/aevare/harbour-leyni/actions/workflows/api-tests.yml/badge.svg)](https://github.com/aevare/harbour-leyni/actions/workflows/api-tests.yml)
+[![SFOS RPM build](https://github.com/aevare/harbour-leyni/actions/workflows/sfos-build.yml/badge.svg)](https://github.com/aevare/harbour-leyni/actions/workflows/sfos-build.yml)
 
 ## Project status
 

@@ -23,7 +23,7 @@
 
 #include "securebytes.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 // Argon2id cost for the PIN key-encryption-key. Fixed and deliberately high:
@@ -67,4 +67,4 @@ PinWrappedKey wrapWithPin(const SecureBytes &secret, const SecureBytes &pin);
 SecureBytes unwrapWithPin(const PinWrappedKey &wrapped, const SecureBytes &pin);
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

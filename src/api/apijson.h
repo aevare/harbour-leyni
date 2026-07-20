@@ -12,7 +12,7 @@
 
 #include "kdf.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Api {
 
 // Bitwarden DeviceType enum: 8 = LinuxDesktop. There is no Sailfish value;
@@ -100,4 +100,4 @@ bool parseTokenResponse(const QByteArray &body, TokenResponse *out,
 ApiError parseTokenError(int httpStatus, const QByteArray &body);
 
 } // namespace Api
-} // namespace BitVault
+} // namespace Leyni

@@ -20,8 +20,8 @@
 
 #include "../check.h"
 
-using namespace BitVault::Api;
-using namespace BitVault::Crypto;
+using namespace Leyni::Api;
+using namespace Leyni::Crypto;
 
 namespace {
 
@@ -271,7 +271,7 @@ void testSyncStore()
     QTemporaryDir dir;
     CHECK(dir.isValid());
 
-    BitVault::Vault::SyncStore store(dir.path());
+    Leyni::Vault::SyncStore store(dir.path());
     CHECK(!store.exists());
     CHECK(store.load().isEmpty());
 

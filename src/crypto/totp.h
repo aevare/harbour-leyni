@@ -9,7 +9,7 @@
 
 #include "securebytes.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 enum class TotpAlgorithm {
@@ -33,4 +33,4 @@ std::string totp(const SecureBytes &key, uint64_t unixTime,
                  uint32_t periodSeconds, int digits, TotpAlgorithm algorithm);
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

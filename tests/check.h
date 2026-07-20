@@ -25,7 +25,7 @@
         bool threw_ = false;                                                 \
         try {                                                                \
             (void)(expr);                                                    \
-        } catch (const BitVault::Crypto::CryptoError &) {                    \
+        } catch (const Leyni::Crypto::CryptoError &) {                    \
             threw_ = true;                                                   \
         }                                                                    \
         if (!threw_) {                                                       \

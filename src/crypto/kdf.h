@@ -14,7 +14,7 @@
 
 #include "securebytes.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 enum class KdfType : int {
@@ -60,4 +60,4 @@ SecureBytes deriveMasterPasswordHash(const SecureBytes &masterKey,
                                      const SecureBytes &password);
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

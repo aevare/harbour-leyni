@@ -2,7 +2,7 @@
 
 #include "crypto.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 namespace {
@@ -101,4 +101,4 @@ std::vector<uint8_t> base64Decode(const std::string &text)
 }
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

@@ -10,12 +10,12 @@ add_executable(crypto_tests
     crypto/totp_tests.cpp
     crypto/vector_tests.cpp
 )
-target_link_libraries(crypto_tests PRIVATE bitvault-crypto)
+target_link_libraries(crypto_tests PRIVATE leyni-crypto)
 add_test(NAME crypto_tests COMMAND crypto_tests)
 
 # API layer tests (Phase 2). Only built when src/api was configured in
 # (BUILD_APP or BUILD_API); see doc/TESTING.md Layer 3.
-if(TARGET bitvault-api)
+if(TARGET leyni-api)
     find_package(Qt5 COMPONENTS Core Network REQUIRED)
     find_package(OpenSSL REQUIRED)
 
@@ -23,7 +23,7 @@ if(TARGET bitvault-api)
     # SyncStore file I/O. Part of the default `ctest -LE integration` run.
     add_executable(api_unit_tests api/api_unit_tests.cpp)
     target_link_libraries(api_unit_tests PRIVATE
-        bitvault-api bitvault-vault bitvault-crypto Qt5::Core Qt5::Network)
+        leyni-api leyni-vault leyni-crypto Qt5::Core Qt5::Network)
     add_test(NAME api_unit_tests COMMAND api_unit_tests)
 
     # Live end-to-end tests against a real server (default
@@ -31,7 +31,7 @@ if(TARGET bitvault-api)
     # `ctest -L integration`; never runs in the plain unit-test job.
     add_executable(api_integration_tests api/api_integration_tests.cpp)
     target_link_libraries(api_integration_tests PRIVATE
-        bitvault-api bitvault-vault bitvault-crypto Qt5::Core Qt5::Network
+        leyni-api leyni-vault leyni-crypto Qt5::Core Qt5::Network
         OpenSSL::Crypto)
     add_test(NAME api_integration_tests COMMAND api_integration_tests)
     set_tests_properties(api_integration_tests PROPERTIES LABELS "integration")
@@ -42,7 +42,7 @@ if(TARGET bitvault-api)
     # tests/fixtures/README.md.
     add_executable(generate_sync_fixture fixtures/generate_sync_fixture.cpp)
     target_link_libraries(generate_sync_fixture PRIVATE
-        bitvault-api bitvault-crypto Qt5::Core Qt5::Network OpenSSL::Crypto)
+        leyni-api leyni-crypto Qt5::Core Qt5::Network OpenSSL::Crypto)
 
     # Vault layer tests (Phase 3): offline, unlock the committed sync.json
     # fixture with no network. Part of the default `ctest -LE integration`
@@ -51,6 +51,6 @@ if(TARGET bitvault-api)
     target_compile_definitions(vault_tests PRIVATE
         BITVAULT_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
     target_link_libraries(vault_tests PRIVATE
-        bitvault-vault bitvault-api bitvault-crypto Qt5::Core Qt5::Network)
+        leyni-vault leyni-api leyni-crypto Qt5::Core Qt5::Network)
     add_test(NAME vault_tests COMMAND vault_tests)
 endif()

@@ -16,7 +16,7 @@
 #include "keys.h"
 #include "securebytes.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 struct EncString {
@@ -49,4 +49,4 @@ SecureBytes decryptRsaOaepSha1(const EncString &enc,
                                const SecureBytes &privateKeyDer);
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

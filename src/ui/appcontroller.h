@@ -31,7 +31,7 @@
 #include "vault.h"
 #include "vaultmodel.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Ui {
 
 // Result of the worker-thread KDF run (shared_ptr because QFuture requires
@@ -250,4 +250,4 @@ private:
 };
 
 } // namespace Ui
-} // namespace BitVault
+} // namespace Leyni

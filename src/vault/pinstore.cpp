@@ -5,7 +5,7 @@
 #include <QSaveFile>
 #include <QStandardPaths>
 
-namespace BitVault {
+namespace Leyni {
 namespace Vault {
 
 PinStore::PinStore(const QString &directory)
@@ -62,4 +62,4 @@ bool PinStore::clear()
 }
 
 } // namespace Vault
-} // namespace BitVault
+} // namespace Leyni

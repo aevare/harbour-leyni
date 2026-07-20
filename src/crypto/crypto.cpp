@@ -1,6 +1,6 @@
 #include "crypto.h"
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 const char *version()
@@ -9,4 +9,4 @@ const char *version()
 }
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

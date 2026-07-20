@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <string>
 
-namespace BitVault {
+namespace Leyni {
 namespace Crypto {
 
 struct PasswordOptions {
@@ -37,4 +37,4 @@ std::string generatePassword(const PasswordOptions &opts);
 uint32_t randomIndex(uint32_t bound);
 
 } // namespace Crypto
-} // namespace BitVault
+} // namespace Leyni

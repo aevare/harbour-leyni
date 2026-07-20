@@ -1,4 +1,4 @@
-# BitVault — Development Plan
+# Leyni — Development Plan
 
 A fully native, open-source Bitwarden client for Sailfish OS.
 
@@ -22,16 +22,16 @@ Goal: an empty app that builds, packages, and has CI proving it.
 
 - [x] Choose a license: GPL-3.0-or-later (spec `License:` tag uses `GPLv3+`, the
       Fedora-style form the Sailfish rpmlint allowlist requires)
-- [x] Scaffold the project: CMake template, `rpm/harbour-bitvault.spec`,
+- [x] Scaffold the project: CMake template, `rpm/harbour-leyni.spec`,
       `.desktop` with `[X-Sailjail] Permissions=Internet`, stub icons (86/108/128/172 px)
-- [x] `git init` done; repository public at `github.com/aevare/harbour-bitvault`
+- [x] `git init` done; repository public at `github.com/aevare/harbour-leyni`
       (matches the URL assumed in spec/README; verified reachable 2026-07-15)
 - [x] CI workflow 1: SFOS RPM matrix build (4.5/4.6/5.0 × armv7hl + aarch64) via
       `CODeRUS/github-sfos-build` — written; proven on first push
 - [x] CI workflow 2: plain-Linux build of `src/crypto/` + unit tests — verified locally
 - [x] `docker-compose.yml` under `dev/` running a local Vaultwarden instance as the test server
 - [x] Verify packaging: Dockerized mb2 build (SFOS 5.0.0.43 aarch64) produces
-      `harbour-bitvault-0.1-1.aarch64.rpm`, rpmlint 0 errors
+      `harbour-leyni-0.1-1.aarch64.rpm`, rpmlint 0 errors
       (fixed: template's `$<BUILD_INTERFACE:>` include-path mangling, dir perms, changelog)
 - [x] Verified on a real device: RPM installs and the placeholder page launches (2026-07-08)
 

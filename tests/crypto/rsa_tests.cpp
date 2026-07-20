@@ -14,7 +14,7 @@
 #include "keys.h"
 #include "../check.h"
 
-using namespace BitVault::Crypto;
+using namespace Leyni::Crypto;
 
 namespace {
 
