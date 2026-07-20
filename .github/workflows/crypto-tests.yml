@@ -2,7 +2,12 @@ name: Crypto tests (plain Linux)
 
 on:
   push:
+    # Skip tag pushes: the Release workflow calls this via workflow_call, so a
+    # tag push would otherwise run these tests twice.
+    tags-ignore:
+      - '**'
   pull_request:
+  workflow_call:
 
 jobs:
   test:
