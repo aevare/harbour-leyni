@@ -1,10 +1,10 @@
 name: SFOS RPM build
 
+# PR-only: mainline RPMs are built and published by the tag-driven Release
+# workflow (.github/workflows/release.yml), so there is no separate build on
+# push — this avoids a redundant SFOS build when a release tag is pushed
+# alongside main.
 on:
-  push:
-    branches:
-      - master
-      - main
   pull_request:
 
 jobs:
