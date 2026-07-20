@@ -1,5 +1,9 @@
 # Add newest entries at the top.
 
+* Mon Jul 20 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.1.2
+- Rename app from BitVault to Leyni (harbour-leyni)
+- CI: fix tag-driven release workflow (reusable test workflows)
+
 * Mon Jul 20 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.1.1
 - Rename app from BitVault to Leyni (harbour-leyni)
 
