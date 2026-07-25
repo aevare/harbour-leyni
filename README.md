@@ -10,12 +10,14 @@ someone else's binary.
 
 ## Project status
 
-**Read-only MVP, working on-device.** Phases 0–4 of [doc/PLAN.md](doc/PLAN.md) are
-complete: login (including TOTP/email two-factor), sync, offline unlock, search and
-folder filtering, item details with copy and reveal, TOTP code generation with
-countdown, clipboard auto-clear, auto-lock, and lock-on-minimize — against Vaultwarden
-and Bitwarden-compatible servers. Write support (creating/editing items) does not
-exist yet. Hardening and a first packaged release are in progress (Phase 5).
+**Working on-device, with read and write support.** Login (including TOTP/email
+two-factor), sync, offline unlock, search and folder filtering, item details with copy
+and reveal, TOTP code generation with countdown, clipboard auto-clear, auto-lock, and
+lock-on-minimize all work against Vaultwarden and Bitwarden-compatible servers.
+Creating, editing, and deleting logins and secure notes is implemented, along with a
+built-in password generator and an optional PIN unlock. Cards and identities are
+currently view-only. Hardening and packaging toward a stable release are ongoing; see
+[doc/PLAN.md](doc/PLAN.md).
 
 ## What it does today
 
@@ -24,8 +26,13 @@ exist yet. Hardening and a first packaged release are in progress (Phase 5).
 - Sync the encrypted vault and store it as-is (the blob on disk stays
   end-to-end encrypted); unlock and browse fully offline afterwards
 - Logins, secure notes, cards, and identities; organization items included
+- Create, edit, and delete logins and secure notes; changes are encrypted
+  on-device and synced to the server (delete is a soft-delete to the trash)
+- Built-in password generator with configurable length and character classes
 - Search, folder filtering, favorites; reveal-on-tap or copy passwords
 - TOTP codes (RFC 6238, SHA-1/256/512, otpauth:// URIs) with countdown
+- Unlock with the master password, or set a PIN for quick unlock (wrong-PIN
+  attempts are limited, then fall back to a full master-password unlock)
 - Clipboard auto-clear, auto-lock timer, lock on minimize — all configurable
 
 ## Design for trust

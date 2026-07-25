@@ -177,7 +177,17 @@ Goal: earn the trust the project promises, then ship.
       **all suites PASSED**, no findings to fix (2026-07-15). One cosmetic warning —
       unstripped binary — which disappears when the release RPMs are built with `-d`
       (stripped main package + separate -debuginfo/-debugsource); do that for v0.1.0.
-- [ ] Tag v0.1.0 → GitHub release with RPMs; submit to OBS + Chum; OpenRepos upload
+- [x] Fixed Sailjail data-directory persistence (2026-07-25, commit d73692e): the
+      sandbox whitelists only `~/.{config,local/share,cache}/<Org>/<App>/`, so config
+      and vault writes must land there. Declared `OrganizationName`/`ApplicationName`
+      = `harbour-leyni` in the desktop `[X-Sailjail]` profile and pointed `QSettings`
+      at `AppConfigLocation`; `SyncStore`/`PinStore` already use `AppDataLocation`.
+      Verified on device — `~/.config/harbour-leyni/harbour-leyni/` is created and
+      settings/vault persist across restarts. (The 2026-07-15 trace confirmed the app
+      *ran* with Internet only, but hadn't caught that writes were being dropped.)
+- [x] Tag releases → tag-driven GitHub release with RPMs (`release.yml`): v0.1.0,
+      v0.1.1, v0.1.2 shipped
+- [ ] Submit to OBS + Chum; OpenRepos upload
 - [ ] Announce beta on the Sailfish forum, explicitly inviting code review
 
 **Done when:** v0.1.0 is installable from Chum and the forum thread links to the source
