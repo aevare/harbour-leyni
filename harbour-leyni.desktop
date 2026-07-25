@@ -6,4 +6,6 @@ Exec=harbour-leyni
 Name=Leyni
 
 [X-Sailjail]
+OrganizationName=harbour-leyni
+ApplicationName=harbour-leyni
 Permissions=Internet

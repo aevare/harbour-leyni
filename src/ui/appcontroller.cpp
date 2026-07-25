@@ -3,6 +3,7 @@
 #include <QClipboard>
 #include <QDateTime>
 #include <QGuiApplication>
+#include <QStandardPaths>
 #include <QUuid>
 #include <QtConcurrent/QtConcurrentRun>
 
@@ -56,8 +57,10 @@ Crypto::SecureBytes toSecure(const QString &text)
 
 AppController::AppController(QObject *parent)
     : QObject(parent)
-    , m_settings(QStringLiteral("harbour-leyni"),
-                 QStringLiteral("harbour-leyni"))
+    , m_settings(QStandardPaths::writableLocation(
+                     QStandardPaths::AppConfigLocation)
+                     + QStringLiteral("/settings.conf"),
+                 QSettings::IniFormat)
     , m_api(Api::ServerConfig::cloudUs(), this)
     , m_vault(this)
     , m_model(&m_vault, this)
