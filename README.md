@@ -32,7 +32,8 @@ currently view-only. Hardening and packaging toward a stable release are ongoing
 - Search, folder filtering, favorites; reveal-on-tap or copy passwords
 - TOTP codes (RFC 6238, SHA-1/256/512, otpauth:// URIs) with countdown
 - Unlock with the master password, or set a PIN for quick unlock (wrong-PIN
-  attempts are limited, then fall back to a full master-password unlock)
+  attempts are limited, then fall back to a full master-password unlock); the
+  PIN-wrapped key and session token are kept in Sailfish Secrets
 - Clipboard auto-clear, auto-lock timer, lock on minimize — all configurable
 
 ## Design for trust

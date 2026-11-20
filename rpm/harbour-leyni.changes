@@ -1,5 +1,13 @@
 # Add newest entries at the top.
 
+* Fri Nov 20 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.4.0
+- Store the PIN-wrapped key, refresh token and wrong-PIN counter in Sailfish
+  Secrets instead of plain files; existing values are migrated on first start
+- Add the Secrets Sailjail permission
+- Unlock page opens the keyboard on the PIN field right away
+- Search keeps the keyboard open while the list filters; debounce removed
+- Notice banner sits below display cutouts and has readable contrast
+
 * Sat Jul 25 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.1.3
 - Fix settings and vault data not persisting under the Sailjail sandbox
 - Docs: sync README and development plan with current features
