@@ -7,11 +7,8 @@
   contain card numbers/hidden fields, decrypted only on demand.
 
 ## Search
-* Keyboard closes when the list refilters — root cause still open. Ruled out:
-  focusOutBehavior (KeepFocus set), per-keystroke model reset (model now emits
-  row-level diffs, verified by test). Mitigated with a 400 ms debounce so it
-  can no longer happen mid-word; Enter/clear apply immediately. To pin it down:
-  capture journalctl while typing on device.
+* ~~Keyboard closes when the list refilters~~ done: list items took focus on
+  refilter; SilicaListView now has `currentIndex: -1`. Debounce removed.
 
 ## List
 * ~~Favourites list missing~~ done: favourites sort first with section headers

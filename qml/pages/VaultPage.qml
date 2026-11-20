@@ -16,16 +16,6 @@ Page {
         folderList = App.folders()
     }
 
-    // Refiltering the list can dismiss the keyboard on device even with
-    // row-level model updates (root cause not pinned down yet — see
-    // todo.md), so hold off until the user pauses typing. Clearing and
-    // Enter apply immediately.
-    Timer {
-        id: searchDebounce
-        interval: 400
-        onTriggered: App.vaultModel.setSearchQuery(page.searchText)
-    }
-
     function iconForType(cipherType) {
         switch (cipherType) {
         case 1: return "image://theme/icon-m-website"
@@ -68,6 +58,10 @@ Page {
         id: listView
         anchors.fill: parent
         model: App.vaultModel
+        // No current item: otherwise the view hands focus to a list item when
+        // the search refilters the rows, which steals it from the SearchField
+        // and closes the keyboard.
+        currentIndex: -1
 
         // The model sorts favourites first; headers only make sense when
         // both groups exist, so they collapse when nothing is a favourite.
@@ -104,18 +98,10 @@ Page {
                 focusOutBehavior: FocusBehavior.KeepFocus
                 onTextChanged: {
                     page.searchText = text
-                    if (text.length === 0) {
-                        searchDebounce.stop()
-                        App.vaultModel.setSearchQuery("")
-                    } else {
-                        searchDebounce.restart()
-                    }
-                }
-                EnterKey.iconSource: "image://theme/icon-m-enter-close"
-                EnterKey.onClicked: {
-                    searchDebounce.stop()
                     App.vaultModel.setSearchQuery(text)
                 }
+                EnterKey.iconSource: "image://theme/icon-m-enter-close"
+                EnterKey.onClicked: focus = false
             }
 
             ComboBox {

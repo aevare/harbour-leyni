@@ -17,8 +17,18 @@ Page {
         pinField.text = ""
     }
 
+    // Open the keyboard straight away on whichever field is shown.
+    function focusInput() {
+        if (page.usePassword) {
+            passwordField.forceActiveFocus()
+        } else {
+            pinField.forceActiveFocus()
+        }
+    }
+
     onStatusChanged: {
-        if (status === PageStatus.Deactivating) { clearFields() }
+        if (status === PageStatus.Active) { focusInput() }
+        else if (status === PageStatus.Deactivating) { clearFields() }
     }
 
     Component.onDestruction: clearFields()
@@ -113,6 +123,7 @@ Page {
                 onClicked: {
                     page.clearFields()
                     page.usePassword = !page.usePassword
+                    page.focusInput()
                 }
                 Label {
                     id: toggleLabel
