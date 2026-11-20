@@ -15,6 +15,7 @@ BuildRequires:  pkgconfig(Qt5Quick)
 BuildRequires:  pkgconfig(Qt5Network)
 BuildRequires:  pkgconfig(Qt5Concurrent)
 BuildRequires:  pkgconfig(libcrypto)
+BuildRequires:  pkgconfig(sailfishsecrets)
 BuildRequires:  desktop-file-utils
 BuildRequires:  cmake
 

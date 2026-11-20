@@ -23,6 +23,7 @@ if(BUILD_APP)
 
     include(FindPkgConfig)
     pkg_search_module(SAILFISH sailfishapp REQUIRED)
+    pkg_search_module(SECRETS sailfishsecrets REQUIRED)
 
     set(CMAKE_AUTOMOC ON)
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -36,19 +37,22 @@ if(BUILD_APP)
     add_executable(harbour-leyni
         src/main.cpp
         src/ui/appcontroller.cpp
+        src/ui/secretstore.cpp
     )
     target_compile_definitions(harbour-leyni PRIVATE
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>
     )
     # No $<BUILD_INTERFACE:> genex here: on the SFOS 5.0 target's CMake it
     # mangles the first pkg-config dir into a build-dir-relative path.
-    target_include_directories(harbour-leyni PRIVATE ${SAILFISH_INCLUDE_DIRS})
+    target_include_directories(harbour-leyni PRIVATE
+        ${SAILFISH_INCLUDE_DIRS} ${SECRETS_INCLUDE_DIRS})
     target_link_libraries(harbour-leyni
         Qt5::Quick
         Qt5::Concurrent
         leyni-api
         leyni-vault
         ${SAILFISH_LDFLAGS}
+        ${SECRETS_LDFLAGS}
     )
 
     install(TARGETS harbour-leyni RUNTIME DESTINATION bin)

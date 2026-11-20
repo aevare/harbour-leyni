@@ -213,7 +213,7 @@ and SECURITY.md.
    from the PIN (t=8, 64 MiB, p=4); opt-in; 3 wrong PINs wipe the wrapped key;
    dropped on sign-out and on server-side key change. Offline-brute-force
    exposure documented in SECURITY.md → "PIN unlock". Code: `src/crypto/pinwrap.*`,
-   `src/vault/pinstore.*`, KATs in `tests/crypto/pinwrap_tests.cpp`.
+   `src/ui/secretstore.*` (Sailfish Secrets), KATs in `tests/crypto/pinwrap_tests.cpp`.
 4. Organizations/collections decryption (RSA path from Phase 1)
 5. Attachments (download/decrypt)
 6. Bitwarden Send

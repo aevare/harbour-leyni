@@ -8,4 +8,4 @@ Name=Leyni
 [X-Sailjail]
 OrganizationName=harbour-leyni
 ApplicationName=harbour-leyni
-Permissions=Internet
+Permissions=Internet;Secrets

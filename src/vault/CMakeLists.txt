@@ -3,7 +3,6 @@
 find_package(Qt5 COMPONENTS Core REQUIRED)
 
 add_library(leyni-vault STATIC
-    pinstore.cpp
     syncparser.cpp
     syncstore.cpp
     vault.cpp

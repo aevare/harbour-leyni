@@ -2,6 +2,7 @@
 
 #include <QClipboard>
 #include <QDateTime>
+#include <QDebug>
 #include <QGuiApplication>
 #include <QStandardPaths>
 #include <QUuid>
@@ -22,6 +23,10 @@ const char kSettingServer[] = "account/serverUrl";
 const char kSettingEmail[] = "account/email";
 const char kSettingDeviceId[] = "account/deviceId";
 const char kSettingRefreshToken[] = "session/refreshToken";
+// Secret names in the app's Sailfish Secrets collection (see secretstore.h).
+const QString kSecretPinKey = QStringLiteral("pinWrappedKey");
+const QString kSecretPinFailures = QStringLiteral("pinFailures");
+const QString kSecretRefreshToken = QStringLiteral("refreshToken");
 const char kSettingKdfType[] = "kdf/type";
 const char kSettingKdfIterations[] = "kdf/iterations";
 const char kSettingKdfMemory[] = "kdf/memoryMiB";
@@ -29,6 +34,7 @@ const char kSettingKdfParallelism[] = "kdf/parallelism";
 const char kSettingAutoLockMinutes[] = "security/autoLockMinutes";
 const char kSettingClipboardSeconds[] = "security/clipboardClearSeconds";
 const char kSettingLockOnMinimize[] = "security/lockOnMinimize";
+// Legacy (<= 0.1.3) plaintext locations; migrated into Sailfish Secrets.
 const char kSettingPinFailures[] = "security/pinFailures";
 const char kSettingGenLength[] = "generator/length";
 const char kSettingGenLower[] = "generator/lowercase";
@@ -67,8 +73,7 @@ AppController::AppController(QObject *parent)
 {
     m_api.setServerConfig(currentServerConfig());
 
-    m_refreshToken =
-        m_settings.value(QLatin1String(kSettingRefreshToken)).toByteArray();
+    loadSecrets();
 
     m_vault.setAutoLockSeconds(autoLockMinutes() * 60);
     connect(&m_vault, &Vault::Vault::lockedChanged, this, [this](bool locked) {
@@ -395,8 +400,7 @@ void AppController::cancelLogin()
 void AppController::finishLogin(const Api::TokenResponse &token)
 {
     m_accessToken = token.accessToken;
-    m_refreshToken = token.refreshToken;
-    m_settings.setValue(QLatin1String(kSettingRefreshToken), m_refreshToken);
+    storeRefreshToken(token.refreshToken);
     m_pendingHash.clear();
     m_twoFactorProviders.clear();
 
@@ -492,25 +496,81 @@ void AppController::unlock(const QString &password)
     });
 }
 
+void AppController::loadSecrets()
+{
+    // Versions <= 0.1.3 kept the PIN-wrapped key in a plain file and the
+    // refresh token + PIN attempt counter in settings.conf. Move them into
+    // Sailfish Secrets; plaintext copies are removed only once stored.
+    m_secrets.migrateFile(
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+            + QStringLiteral("/pin.dat"),
+        kSecretPinKey);
+
+    const QByteArray legacyToken =
+        m_settings.value(QLatin1String(kSettingRefreshToken)).toByteArray();
+    if (!legacyToken.isEmpty()
+            && m_secrets.store(kSecretRefreshToken, legacyToken)) {
+        m_settings.remove(QLatin1String(kSettingRefreshToken));
+    }
+    if (m_settings.contains(QLatin1String(kSettingPinFailures))) {
+        const int legacyFailures =
+            m_settings.value(QLatin1String(kSettingPinFailures), 0).toInt();
+        if (legacyFailures <= 0
+                || m_secrets.store(kSecretPinFailures,
+                                   QByteArray::number(legacyFailures))) {
+            m_settings.remove(QLatin1String(kSettingPinFailures));
+        }
+    }
+
+    // If Secrets is unreachable, fall back to a not-yet-migrated token for
+    // this run; migration is retried on the next start.
+    QByteArray value;
+    m_refreshToken =
+        m_secrets.load(kSecretRefreshToken, &value)
+                == SecretStore::LoadStatus::Found
+            ? value
+            : legacyToken;
+
+    m_pinEnabled = m_secrets.load(kSecretPinKey, &value)
+                   == SecretStore::LoadStatus::Found;
+    m_pinFailures = m_secrets.load(kSecretPinFailures, &value)
+                            == SecretStore::LoadStatus::Found
+                        ? value.toInt()
+                        : 0;
+}
+
+void AppController::storeRefreshToken(const QByteArray &token)
+{
+    m_refreshToken = token;
+    // Never back to plaintext, even if Secrets fails below.
+    m_settings.remove(QLatin1String(kSettingRefreshToken));
+    const bool ok = token.isEmpty()
+                        ? m_secrets.remove(kSecretRefreshToken)
+                        : m_secrets.store(kSecretRefreshToken, token);
+    if (!ok) {
+        qWarning() << "refresh token not persisted; sign-in will be needed "
+                      "after restart";
+    }
+}
+
 bool AppController::pinEnabled() const
 {
-    return m_pinStore.exists();
+    return m_pinEnabled;
 }
 
-int AppController::pinFailures() const
+bool AppController::setPinFailures(int count)
 {
-    return m_settings.value(QLatin1String(kSettingPinFailures), 0).toInt();
-}
-
-void AppController::setPinFailures(int count)
-{
-    m_settings.setValue(QLatin1String(kSettingPinFailures), count);
+    m_pinFailures = count;
+    return count <= 0 ? m_secrets.remove(kSecretPinFailures)
+                      : m_secrets.store(kSecretPinFailures,
+                                        QByteArray::number(count));
 }
 
 void AppController::forgetPin()
 {
-    m_pinStore.clear();
-    m_settings.remove(QLatin1String(kSettingPinFailures));
+    m_secrets.remove(kSecretPinKey);
+    setPinFailures(0);
+    m_pinEnabled = false;
     emit pinChanged();
 }
 
@@ -577,11 +637,13 @@ void AppController::enablePin(const QString &masterPassword, const QString &pin)
                     emit notify(result->error);
                     return;
                 }
-                if (!m_pinStore.save(result->blob)) {
+                if (!m_secrets.store(kSecretPinKey, result->blob)
+                        || !setPinFailures(0)) {
+                    m_secrets.remove(kSecretPinKey);
                     emit notify(QStringLiteral("Could not store PIN"));
                     return;
                 }
-                setPinFailures(0);
+                m_pinEnabled = true;
                 emit pinChanged();
                 emit notify(QStringLiteral("PIN unlock enabled"));
             });
@@ -596,7 +658,7 @@ void AppController::disablePin()
 
 void AppController::unlockWithPin(const QString &pin)
 {
-    if (!m_pinStore.exists()) {
+    if (!m_pinEnabled) {
         setError(QStringLiteral("PIN not set up"));
         return;
     }
@@ -605,12 +667,28 @@ void AppController::unlockWithPin(const QString &pin)
         return;
     }
 
+    QByteArray blob;
+    const SecretStore::LoadStatus status = m_secrets.load(kSecretPinKey, &blob);
+    if (status != SecretStore::LoadStatus::Found) {
+        if (status == SecretStore::LoadStatus::Missing) {
+            // The secret is gone (e.g. secrets storage was reset).
+            forgetPin();
+            setError(QStringLiteral("PIN not set up — use your master "
+                                    "password"));
+        } else {
+            // Daemon unreachable or collection locked: keep the PIN, it may
+            // work next time.
+            setError(QStringLiteral("Could not read PIN from secure "
+                                    "storage — use your master password"));
+        }
+        return;
+    }
+
     Crypto::PinWrappedKey wrapped;
     try {
-        wrapped = Crypto::PinWrappedKey::parse(
-            m_pinStore.load().toStdString());
+        wrapped = Crypto::PinWrappedKey::parse(blob.toStdString());
     } catch (const Crypto::CryptoError &) {
-        // A corrupt PIN file is unusable — drop it and fall back.
+        // A corrupt PIN blob is unusable — drop it and fall back.
         forgetPin();
         setError(QStringLiteral("PIN data unreadable — use your master "
                                 "password"));
@@ -644,8 +722,15 @@ void AppController::unlockWithPin(const QString &pin)
                     setError(QStringLiteral(
                         "Too many wrong PINs — unlock with your master "
                         "password"));
+                } else if (!setPinFailures(failures)) {
+                    // The attempt limit must hold: if the count cannot be
+                    // recorded, give up on the PIN rather than allow
+                    // unlimited guesses.
+                    forgetPin();
+                    setError(QStringLiteral(
+                        "Could not record PIN attempt — unlock with your "
+                        "master password"));
                 } else {
-                    setPinFailures(failures);
                     setError(QStringLiteral("Wrong PIN (%1 of %2)")
                                  .arg(failures)
                                  .arg(kMaxPinFailures));
@@ -696,8 +781,7 @@ void AppController::refreshAndSync(bool freshLogin)
         if (!r.ok()) {
             setBusy(false);
             setError(QStringLiteral("session expired — sign in again"));
-            m_settings.remove(QLatin1String(kSettingRefreshToken));
-            m_refreshToken.clear();
+            storeRefreshToken(QByteArray());
             if (m_vault.isLocked()) {
                 setState(QStringLiteral("login"));
             }
@@ -705,9 +789,7 @@ void AppController::refreshAndSync(bool freshLogin)
         }
         m_accessToken = r.value.accessToken;
         if (!r.value.refreshToken.isEmpty()) {
-            m_refreshToken = r.value.refreshToken;
-            m_settings.setValue(QLatin1String(kSettingRefreshToken),
-                                m_refreshToken);
+            storeRefreshToken(r.value.refreshToken);
         }
         m_api.sync(m_accessToken,
                    [this, freshLogin](Api::Result<QByteArray> result) {
@@ -763,9 +845,7 @@ void AppController::refreshThenWrite(const CipherWriteCall &doWrite,
         }
         m_accessToken = r.value.accessToken;
         if (!r.value.refreshToken.isEmpty()) {
-            m_refreshToken = r.value.refreshToken;
-            m_settings.setValue(QLatin1String(kSettingRefreshToken),
-                                m_refreshToken);
+            storeRefreshToken(r.value.refreshToken);
         }
         doWrite(m_accessToken, [this, successMessage](
                                    Api::Result<QByteArray> writeResult) {
@@ -943,8 +1023,7 @@ void AppController::signOut()
 {
     m_vault.lock();
     m_accessToken.clear();
-    m_refreshToken.clear();
-    m_settings.remove(QLatin1String(kSettingRefreshToken));
+    storeRefreshToken(QByteArray());
     m_syncStore.clear();
     forgetPin(); // the wrapped master key belongs to this account
     setState(QStringLiteral("login"));

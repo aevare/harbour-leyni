@@ -25,7 +25,7 @@
 #include <memory>
 
 #include "apiclient.h"
-#include "pinstore.h"
+#include "secretstore.h"
 #include "securebytes.h"
 #include "syncstore.h"
 #include "vault.h"
@@ -187,11 +187,17 @@ private:
     void runPinWorker(std::function<std::shared_ptr<PinResult>()> work,
                       std::function<void(std::shared_ptr<PinResult>)> next);
 
-    // Persisted count of consecutive failed PIN attempts; wiping the wrapped
-    // key at the limit survives an app restart (an attacker cannot reset it by
-    // relaunching). kMaxPinFailures lives in the .cpp.
-    int pinFailures() const;
-    void setPinFailures(int count);
+    // Count of consecutive failed PIN attempts, persisted in Sailfish Secrets
+    // next to the wrapped key so the limit survives a restart and cannot be
+    // reset by editing settings.conf. Returns false if it could not be
+    // persisted. kMaxPinFailures lives in the .cpp.
+    int pinFailures() const { return m_pinFailures; }
+    bool setPinFailures(int count);
+    // Persist (or, if empty, delete) the refresh token in Sailfish Secrets.
+    void storeRefreshToken(const QByteArray &token);
+    // Startup: move pre-Secrets values (pin.dat, settings.conf token/counter)
+    // into Secrets, then load the cached state below.
+    void loadSecrets();
     // Delete the wrapped key + reset the counter, then notify QML.
     void forgetPin();
 
@@ -227,7 +233,10 @@ private:
     Vault::Vault m_vault;
     Vault::VaultListModel m_model;
     Vault::SyncStore m_syncStore;
-    Vault::PinStore m_pinStore;
+    SecretStore m_secrets;
+    // Cached so QML property reads do not hit D-Bus.
+    bool m_pinEnabled = false;
+    int m_pinFailures = 0;
 
     QString m_state;
     bool m_busy = false;

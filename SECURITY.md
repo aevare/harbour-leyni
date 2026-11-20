@@ -127,21 +127,22 @@ All paths are Sailjail-private (inaccessible to other sandboxed apps).
 | What | Where | Protection |
 |---|---|---|
 | Sync blob (vault ciphertext) | `~/.local/share/xyz.eggerts/harbour-leyni/sync.json` | End-to-end encrypted by the Bitwarden scheme; stored byte-for-byte as the server sent it. Written atomically via `QSaveFile`. |
-| OAuth refresh token | QSettings (`~/.config/harbour-leyni/`) | **Plaintext.** See note below. |
+| OAuth refresh token | Sailfish Secrets (same `harbourleyni` collection) | Owner-only, device-lock-protected, inside the daemon's encrypted storage. See note below. Versions ≤ 0.1.3 kept it in plaintext in QSettings; it is migrated and removed from there on first start. |
 | KDF parameters (type, iterations, memory, lanes) | QSettings | Plaintext; not secret (the server hands them to anyone who asks prelogin). Enables offline unlock. |
-| PIN-wrapped master key (only if PIN unlock is enabled) | `~/.local/share/xyz.eggerts/harbour-leyni/pin.dat` | The master key encrypted under a key derived from your PIN alone (Argon2id + AES-256-CBC-HMAC). **Offline-brute-forceable** — see "PIN unlock" below. Absent unless you opt in; deleted on sign-out and after too many wrong PINs. |
+| PIN-wrapped master key (only if PIN unlock is enabled) | Sailfish Secrets: owner-only, device-lock collection `harbourleyni` in the daemon's encrypted (SQLCipher) storage | The master key encrypted under a key derived from your PIN alone (Argon2id + AES-256-CBC-HMAC), additionally held inside Sailfish Secrets rather than as a file. **Still offline-brute-forceable if the secrets storage itself is extracted** — see "PIN unlock" below. Absent unless you opt in; deleted on sign-out and after too many wrong PINs. Versions ≤ 0.1.3 used a `pin.dat` file, which is migrated into Secrets and deleted on first start. |
 | Server URL, account email, device ID, UI settings | QSettings | Plaintext; not secret. |
 | Access token | memory only | Discarded on exit. |
 | Master password, master key, user/org keys, decrypted items | **never written to disk** | — |
 
-**About the refresh token:** it is stored in plaintext because Sailfish OS has
-no hardware-backed keystore, and encrypting it with a key stored next to it
-would be obfuscation, not security. An attacker who reads it can call the API
-and download your **encrypted** vault — the same ciphertext in `sync.json` —
-but cannot decrypt anything without the master password. They could also
+**About the refresh token:** it is kept in Sailfish Secrets rather than in
+`settings.conf`, so it is not a plain file and other apps cannot read it.
+Sailfish OS has no hardware-backed keystore, though: the secrets storage is
+protected by the device lock code, so treat this as "as safe as your device
+lock", not as hardware-bound. An attacker who obtains the token can call the
+API and download your **encrypted** vault — the same ciphertext in `sync.json`
+— but cannot decrypt anything without the master password. They could also
 trigger server-side actions a Bitwarden session allows. "Sign out" deletes
-the token locally; you can additionally revoke sessions from the Bitwarden
-web vault.
+the token; you can additionally revoke sessions from the Bitwarden web vault.
 
 **About the sync blob:** item names, usernames, URIs, notes, and all secret
 fields inside it are EncStrings (ciphertext). The blob's plaintext envelope
@@ -175,15 +176,18 @@ trade-off, stated plainly here so the choice is informed.
 master password once. The app re-derives your 32-byte master key, verifies it
 against the vault, then wraps it: a key-encryption-key is derived from your PIN
 with Argon2id (t=8, 64 MiB, p=4, over a random 16-byte salt) and used to
-encrypt the master key with AES-256-CBC + HMAC-SHA256. The result is written to
-`pin.dat`. The PIN itself is never stored. On unlock, the PIN re-derives the
+encrypt the master key with AES-256-CBC + HMAC-SHA256. The result is stored in
+Sailfish Secrets (an owner-only collection unlocked by the device lock). The PIN itself is never stored. On unlock, the PIN re-derives the
 key-encryption-key, the MAC is verified in constant time, and the master key is
 recovered and fed into the exact same unlock path a master-password unlock uses.
 
-**The exposure — read this.** `pin.dat` is on disk and survives reboot. Its
-security rests **entirely on the entropy of your PIN**, which is small: a 4-digit
-PIN is about 13 bits, a 6-digit PIN about 20 bits. An attacker who copies
-`pin.dat` off the device (physical access, a backup, forensic imaging) can try
+**The exposure — read this.** The wrapped key survives reboot. Sailfish Secrets
+keeps it out of plain files and backups and restricts it to this app, but
+that storage is protected by the device lock code — itself usually a short
+PIN — so once it is extracted, the wrapped key's security rests **entirely on
+the entropy of your PIN**, which is small: a 4-digit
+PIN is about 13 bits, a 6-digit PIN about 20 bits. An attacker who extracts
+the wrapped key from the device (physical access, a backup, forensic imaging) can try
 every PIN **offline**, as fast as their hardware runs Argon2id — the 3-strikes
 limit below does *not* apply offline, it only guards the running app. The
 aggressive Argon2id parameters raise the per-guess cost (tens of thousands of
@@ -197,9 +201,11 @@ PIN unlock; use the master password.
 
 **Limits that do apply on-device.**
 
-- After **3 consecutive wrong PINs**, the app deletes `pin.dat` and requires a
-  full master-password unlock. The counter is persisted, so it cannot be reset
-  by restarting the app. (Again: this bounds *online* guessing only.)
+- After **3 consecutive wrong PINs**, the app deletes the wrapped key and requires a
+  full master-password unlock. The counter is persisted in Sailfish Secrets next
+  to the wrapped key, so it cannot be reset by restarting the app or editing
+  `settings.conf`; if it cannot be written, the PIN is dropped rather than
+  allowing uncounted attempts. (Again: this bounds *online* guessing only.)
 - The wrapped key is deleted on **sign-out**, and dropped if the vault's key
   no longer matches it (e.g. you changed your master password on the server) —
   in both cases the master password is required.
