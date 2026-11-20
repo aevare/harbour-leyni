@@ -68,16 +68,33 @@ ApplicationWindow {
     // window (no system notification dependency) since these are one-shot
     // hints like "Copied — clears in 30 s", not events worth a Notification
     // center entry.
+    //
+    // Floats as a card below any display cutout (camera bump/notch).
+    // Window children live in Silica's unrotated content item (only pages
+    // rotate), so "top" here is always the physical top edge — the same
+    // native-portrait space Screen.topCutout is reported in.
     Rectangle {
         id: noticeBanner
+
+        readonly property int cutoutDepth: Screen.hasCutouts
+            ? Screen.topCutout.y + Screen.topCutout.height : 0
+
         anchors {
             top: parent.top
-            left: parent.left
-            right: parent.right
+            topMargin: cutoutDepth + Theme.paddingLarge
+            horizontalCenter: parent.horizontalCenter
         }
         z: 1000
-        height: noticeLabel.implicitHeight + Theme.paddingMedium * 2
-        color: Theme.rgba(Theme.highlightBackgroundColor, 0.95)
+        width: parent.width - 2 * Theme.horizontalPageMargin
+        height: noticeLabel.implicitHeight + Theme.paddingLarge * 2
+        radius: Theme.paddingMedium
+        // overlayBackgroundColor/primaryColor are the ambience's opposing
+        // pair (dark/light or light/dark), so text contrast holds on any
+        // ambience. Near-opaque so content scrolling underneath can't wash
+        // it out; the accent border keeps it recognisably themed.
+        color: Theme.rgba(Theme.overlayBackgroundColor, 0.95)
+        border.color: Theme.rgba(Theme.highlightColor, 0.6)
+        border.width: Math.max(1, Math.round(Theme.pixelRatio * 2))
         opacity: 0
         visible: opacity > 0.01
 
@@ -86,10 +103,10 @@ ApplicationWindow {
         Label {
             id: noticeLabel
             anchors.centerIn: parent
-            width: parent.width - 2 * Theme.horizontalPageMargin
+            width: parent.width - 2 * Theme.paddingLarge
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap
-            color: Theme.highlightColor
+            color: Theme.primaryColor
         }
 
         Timer {
