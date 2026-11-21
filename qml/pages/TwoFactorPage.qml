@@ -87,12 +87,6 @@ Page {
                 onClicked: App.submitTwoFactor(selectedProvider, codeField.text, rememberSwitch.checked)
             }
 
-            BusyIndicator {
-                anchors.horizontalCenter: parent.horizontalCenter
-                running: App.busy
-                size: BusyIndicatorSize.Medium
-            }
-
             InfoLabel {
                 text: App.lastError
                 visible: App.lastError.length > 0

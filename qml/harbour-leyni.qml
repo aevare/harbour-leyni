@@ -29,7 +29,7 @@ ApplicationWindow {
         case "setup": return ["SetupPage.qml"]
         case "login": return ["LoginPage.qml", "SetupPage.qml"]
         case "twofactor": return ["TwoFactorPage.qml"]
-        case "locked": return ["UnlockPage.qml", "SettingsPage.qml"]
+        case "locked": return ["UnlockPage.qml"]
         case "unlocked": return ["VaultPage.qml", "ItemDetailPage.qml", "ItemEditPage.qml", "GeneratorDialog.qml", "SettingsPage.qml"]
         default: return ["SetupPage.qml"]
         }
@@ -114,5 +114,21 @@ ApplicationWindow {
             interval: 2500
             onTriggered: noticeBanner.opacity = 0
         }
+    }
+
+    // Top-bar spinner while the controller is busy (login/unlock KDF, sync,
+    // writes); replaces the per-page BusyIndicators. Centered in the header
+    // area so it doesn't collide with the left-aligned title or the pulley
+    // arrow on the right.
+    BusyIndicator {
+        anchors {
+            top: parent.top
+            topMargin: noticeBanner.cutoutDepth + Theme.paddingSmall
+            horizontalCenter: parent.horizontalCenter
+        }
+        z: 1001
+        size: BusyIndicatorSize.Small
+        running: App.busy
+        visible: App.busy
     }
 }

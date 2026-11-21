@@ -47,10 +47,6 @@ Page {
                 onClicked: App.syncNow()
             }
             MenuItem {
-                text: qsTr("Settings")
-                onClicked: pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
-            }
-            MenuItem {
                 text: qsTr("Sign out")
                 onClicked: signOutRemorse.execute(qsTr("Signing out"),
                                                   function() { App.signOut() })
@@ -133,12 +129,6 @@ Page {
                     color: Theme.highlightColor
                     font.pixelSize: Theme.fontSizeSmall
                 }
-            }
-
-            BusyIndicator {
-                anchors.horizontalCenter: parent.horizontalCenter
-                running: App.busy
-                size: BusyIndicatorSize.Medium
             }
 
             InfoLabel {

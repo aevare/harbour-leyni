@@ -510,47 +510,42 @@
     </message>
     <message>
         <location filename="../qml/pages/UnlockPage.qml" line="50"/>
-        <source>Settings</source>
-        <translation>Innstillinger</translation>
-    </message>
-    <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="54"/>
         <source>Sign out</source>
         <translation>Logg ut</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="55"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="51"/>
         <source>Signing out</source>
         <translation>Logger ut</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="65"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="61"/>
         <source>Leyni</source>
         <translation>Leyni</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="85"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="81"/>
         <source>PIN</source>
         <translation>PIN</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="94"/>
-        <location filename="../qml/pages/UnlockPage.qml" line="112"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="90"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="108"/>
         <source>Unlock</source>
         <translation>Lås opp</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="104"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="100"/>
         <source>Master password</source>
         <translation>Hovedpassord</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="131"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="127"/>
         <source>Use PIN</source>
         <translation>Bruk PIN-kode</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="132"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="128"/>
         <source>Use master password</source>
         <translation>Bruk hovedpassord</translation>
     </message>
