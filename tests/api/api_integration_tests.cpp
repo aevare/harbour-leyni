@@ -268,29 +268,72 @@ int main(int argc, char *argv[])
     keys.insert(QStringLiteral("encryptedPrivateKey"),
                QString::fromStdString(encryptedPrivateKey));
 
-    QJsonObject registerBody;
-    registerBody.insert(QStringLiteral("email"), email);
-    registerBody.insert(QStringLiteral("name"), QStringLiteral("Leyni IT"));
-    registerBody.insert(QStringLiteral("masterPasswordHash"),
-                        QString::fromUtf8(serverHashB64));
-    registerBody.insert(QStringLiteral("key"),
-                        QString::fromStdString(protectedKey));
-    registerBody.insert(QStringLiteral("kdf"), 0);
-    registerBody.insert(QStringLiteral("kdfIterations"), 600000);
-    registerBody.insert(QStringLiteral("keys"), keys);
-    const QByteArray registerJson =
-        QJsonDocument(registerBody).toJson(QJsonDocument::Compact);
+    // Current flow (Vaultwarden >= 1.37 removed the legacy endpoints):
+    // send-verification-email, then register/finish. Without SMTP configured
+    // the server returns the verification token directly in the response body.
+    HttpResponse registerResponse;
+    {
+        QJsonObject verifyBody;
+        verifyBody.insert(QStringLiteral("email"), email);
+        verifyBody.insert(QStringLiteral("name"), QStringLiteral("Leyni IT"));
+        verifyBody.insert(QStringLiteral("receiveMarketingEmails"), false);
+        HttpResponse verifyResponse = postJson(
+            &registerNet, config.registerUrl() + "/send-verification-email",
+            QJsonDocument(verifyBody).toJson(QJsonDocument::Compact));
+        CHECK(!verifyResponse.timedOut);
+        registerResponse = verifyResponse;
 
-    HttpResponse registerResponse =
-        postJson(&registerNet, config.registerUrl(), registerJson);
-    CHECK(!registerResponse.timedOut);
-    if (registerResponse.status == 404) {
-        // Vaultwarden version differences: some serve /identity/accounts/
-        // register, others only /api/accounts/register.
-        const QString altUrl = config.apiBase + QStringLiteral("/accounts/register");
-        registerResponse = postJson(&registerNet, altUrl, registerJson);
-        CHECK(!registerResponse.timedOut);
+        if (verifyResponse.status == 200) {
+            // Body is a bare JSON string; strip the quotes.
+            const QString token =
+                QString::fromUtf8(verifyResponse.body).trimmed().remove(QLatin1Char('"'));
+            CHECK(!token.isEmpty());
+
+            QJsonObject finishBody;
+            finishBody.insert(QStringLiteral("email"), email);
+            finishBody.insert(QStringLiteral("emailVerificationToken"), token);
+            finishBody.insert(QStringLiteral("masterPasswordHash"),
+                              QString::fromUtf8(serverHashB64));
+            finishBody.insert(QStringLiteral("userSymmetricKey"),
+                              QString::fromStdString(protectedKey));
+            finishBody.insert(QStringLiteral("userAsymmetricKeys"), keys);
+            finishBody.insert(QStringLiteral("kdf"), 0);
+            finishBody.insert(QStringLiteral("kdfIterations"), 600000);
+            registerResponse = postJson(
+                &registerNet, config.registerUrl() + "/finish",
+                QJsonDocument(finishBody).toJson(QJsonDocument::Compact));
+            CHECK(!registerResponse.timedOut);
+        }
     }
+
+    // Legacy single-call registration for older Vaultwarden versions.
+    if (registerResponse.status == 404) {
+        QJsonObject registerBody;
+        registerBody.insert(QStringLiteral("email"), email);
+        registerBody.insert(QStringLiteral("name"), QStringLiteral("Leyni IT"));
+        registerBody.insert(QStringLiteral("masterPasswordHash"),
+                            QString::fromUtf8(serverHashB64));
+        registerBody.insert(QStringLiteral("key"),
+                            QString::fromStdString(protectedKey));
+        registerBody.insert(QStringLiteral("kdf"), 0);
+        registerBody.insert(QStringLiteral("kdfIterations"), 600000);
+        registerBody.insert(QStringLiteral("keys"), keys);
+        const QByteArray registerJson =
+            QJsonDocument(registerBody).toJson(QJsonDocument::Compact);
+
+        registerResponse = postJson(&registerNet, config.registerUrl(), registerJson);
+        CHECK(!registerResponse.timedOut);
+        if (registerResponse.status == 404) {
+            // Vaultwarden version differences: some serve /identity/accounts/
+            // register, others only /api/accounts/register.
+            const QString altUrl = config.apiBase + QStringLiteral("/accounts/register");
+            registerResponse = postJson(&registerNet, altUrl, registerJson);
+            CHECK(!registerResponse.timedOut);
+        }
+    }
+    if (registerResponse.status != 200 && registerResponse.status != 201)
+        std::printf("register failed: HTTP %d %s\n", registerResponse.status,
+                    registerResponse.body.constData());
     CHECK(registerResponse.status == 200 || registerResponse.status == 201);
     std::printf("register: OK (HTTP %d)\n", registerResponse.status);
 
