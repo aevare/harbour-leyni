@@ -670,6 +670,11 @@ QByteArray Vault::buildCreateBody(CipherType type, const QVariantMap &fields,
                                        : QJsonValue(folderId));
         body.insert(QStringLiteral("organizationId"),
                     QJsonValue(QJsonValue::Null));
+        // Vaultwarden >= 1.37 rejects cipher writes without the id of the
+        // user whose key encrypted the item (HTTP 422 otherwise).
+        if (!m_data.profileId.isEmpty()) {
+            body.insert(QStringLiteral("encryptedFor"), m_data.profileId);
+        }
 
         if (type == CipherType::Login) {
             body.insert(QStringLiteral("login"),
@@ -762,6 +767,11 @@ QByteArray Vault::buildUpdateBody(const QString &itemId,
         // changed elsewhere since this revision.
         if (!revision.isEmpty()) {
             body.insert(QStringLiteral("lastKnownRevisionDate"), revision);
+        }
+        // See buildCreateBody: required by Vaultwarden >= 1.37. Official
+        // clients send the acting user's id here for org items too.
+        if (!m_data.profileId.isEmpty()) {
+            body.insert(QStringLiteral("encryptedFor"), m_data.profileId);
         }
         return QJsonDocument(body).toJson(QJsonDocument::Compact);
     } catch (const CryptoError &e) {

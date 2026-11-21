@@ -15,6 +15,7 @@ namespace Leyni {
 namespace Vault {
 
 struct SyncData {
+    QString profileId;             // user id; sent as cipher `encryptedFor`
     QString profileEmail;
     std::string profileKey;        // protected user key (EncString)
     std::string profilePrivateKey; // encrypted RSA private key (EncString)

@@ -144,6 +144,7 @@ bool parseSyncJson(const QByteArray &json, SyncData *out,
         return false;
     }
     const QJsonObject profile = profileValue.toObject();
+    out->profileId = valueOf(profile, QStringLiteral("id")).toString();
     out->profileEmail = valueOf(profile, QStringLiteral("email")).toString();
     out->profileKey = encStringOf(profile, QStringLiteral("key"));
     out->profilePrivateKey =
