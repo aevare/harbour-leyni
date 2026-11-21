@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Build stripped RPM
-        uses: CODeRUS/github-sfos-build@master
+        uses: CODeRUS/github-sfos-build@7f0423ce7ad045b50e2d1b8926734fc9cd1e9a7c # master, known good
         with:
           release: ${{ matrix.release }}
           arch: ${{ matrix.arch }}
@@ -68,6 +68,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Keyless build provenance: GitHub's OIDC token gets a short-lived
+      # Sigstore certificate, so no signing key is stored in the repo.
+      id-token: write
+      attestations: write
     steps:
       - name: Download all RPMs
         uses: actions/download-artifact@v5
@@ -89,8 +93,16 @@ jobs:
           done
           ls -l release
 
+      # Attest the final, renamed assets (the attestation binds the file
+      # digest, so it must cover exactly what is uploaded). Users verify with:
+      #   gh attestation verify <file>.rpm --repo aevare/harbour-leyni
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: release/*.rpm
+
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           name: ${{ github.ref_name }}
           # 0.x is beta; drafted so the assets can be eyeballed before it goes

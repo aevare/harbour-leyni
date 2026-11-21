@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Build RPM
-        uses: CODeRUS/github-sfos-build@master
+        uses: CODeRUS/github-sfos-build@7f0423ce7ad045b50e2d1b8926734fc9cd1e9a7c # master, known good
         with:
           release: ${{ matrix.release }}
           arch: ${{ matrix.arch }}

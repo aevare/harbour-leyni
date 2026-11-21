@@ -65,6 +65,21 @@ Correctness is proven, not asserted:
 
 See [doc/TESTING.md](doc/TESTING.md) for the complete strategy.
 
+### Verifying a release
+
+RPMs on the [Releases](https://github.com/aevare/harbour-leyni/releases) page are
+built by GitHub Actions from the tagged source and carry a signed
+[build provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations).
+To check that an RPM was built by this repository's release workflow and has not
+been modified since, run on any machine with the [GitHub CLI](https://cli.github.com/):
+
+```
+gh attestation verify harbour-leyni-<version>-1.<arch>-sfos<sfos-version>.rpm \
+    --repo aevare/harbour-leyni
+```
+
+The output names the workflow, commit, and tag the file was built from.
+
 ## Building
 
 On-device / SDK build with `sfdk`:
