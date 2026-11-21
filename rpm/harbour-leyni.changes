@@ -1,5 +1,11 @@
 # Add newest entries at the top.
 
+* Sat Nov 21 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.4.1
+- Fix creating and editing items on Vaultwarden 1.37 and newer (server
+  rejected them with HTTP 422). After updating, sync the vault once before
+  creating or editing items
+- Tests: register test accounts via the two-step flow Vaultwarden 1.37 uses
+
 * Fri Nov 20 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.4.0
 - Store the PIN-wrapped key, refresh token and wrong-PIN counter in Sailfish
   Secrets instead of plain files; existing values are migrated on first start
