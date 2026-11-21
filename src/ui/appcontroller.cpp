@@ -40,6 +40,8 @@ const char kSettingKdfParallelism[] = "kdf/parallelism";
 const char kSettingAutoLockMinutes[] = "security/autoLockMinutes";
 const char kSettingClipboardSeconds[] = "security/clipboardClearSeconds";
 const char kSettingLockOnMinimize[] = "security/lockOnMinimize";
+// Last successful sync (ms since epoch); drives the stale-vault auto-sync.
+const char kSettingSyncLastSync[] = "sync/lastSyncUtc";
 // Legacy (<= 0.1.3) plaintext locations; migrated into Sailfish Secrets.
 const char kSettingPinFailures[] = "security/pinFailures";
 const char kSettingGenLength[] = "generator/length";
@@ -54,6 +56,10 @@ const char kSettingGenAvoidAmbiguous[] = "generator/avoidAmbiguous";
 const int kMaxPinFailures = 3;
 // Shortest PIN we will wrap. Enforced in QML too; this is the backstop.
 const int kMinPinLength = 4;
+
+// Auto-sync on app open/foreground/unlock when the last successful sync is
+// older than this (or was never recorded, e.g. upgraded from an older app).
+const qint64 kAutoSyncIntervalMs = 24LL * 60 * 60 * 1000;
 
 Crypto::SecureBytes toSecure(const QString &text)
 {
@@ -108,6 +114,11 @@ AppController::AppController(QObject *parent)
         }
     } else {
         m_state = QStringLiteral("login");
+    }
+
+    // Cold start while locked: refresh a stale vault in the background.
+    if (m_state == QLatin1String("locked")) {
+        maybeAutoSync();
     }
 }
 
@@ -451,6 +462,8 @@ void AppController::applySyncBlob(const QByteArray &blob, bool freshLogin)
             emit vaultChanged();
             emit notify(QStringLiteral("Vault synced"));
             m_model.refresh();
+            m_settings.setValue(QLatin1String(kSettingSyncLastSync),
+                                QDateTime::currentMSecsSinceEpoch());
         } else {
             setState(QStringLiteral("locked"));
             setError(error);
@@ -464,6 +477,8 @@ void AppController::applySyncBlob(const QByteArray &blob, bool freshLogin)
         setError(error);
         return;
     }
+    m_settings.setValue(QLatin1String(kSettingSyncLastSync),
+                        QDateTime::currentMSecsSinceEpoch());
 
     if (freshLogin && m_pendingSecrets) {
         // Unlock right away with the key derived during login.
@@ -511,6 +526,7 @@ void AppController::unlock(const QString &password)
             m_model.refresh();
             emit vaultChanged();
             setState(QStringLiteral("unlocked"));
+            maybeAutoSync();
         } else {
             setError(error);
         }
@@ -765,6 +781,7 @@ void AppController::unlockWithPin(const QString &pin)
                 m_model.refresh();
                 emit vaultChanged();
                 setState(QStringLiteral("unlocked"));
+                maybeAutoSync();
             } else {
                 // Correct PIN but the key no longer fits the vault (e.g. the
                 // master password was changed on the server). Not a wrong-PIN
@@ -784,6 +801,23 @@ void AppController::lock()
                  : QStringLiteral("login"));
 }
 
+void AppController::maybeAutoSync()
+{
+    // Sync when the local vault is over a day old (or has no recorded sync
+    // time). Needs only the refresh token, so it also works while locked;
+    // failures stay silent (see refreshAndSync).
+    if (m_refreshToken.isEmpty())
+        return;
+    const qint64 lastSync =
+        m_settings.value(QLatin1String(kSettingSyncLastSync), 0).toLongLong();
+    if (lastSync != 0
+            && QDateTime::currentMSecsSinceEpoch() - lastSync < kAutoSyncIntervalMs) {
+        return;
+    }
+    setBusy(true);
+    refreshAndSync(false, true);
+}
+
 void AppController::syncNow()
 {
     if (m_refreshToken.isEmpty()) {
@@ -795,12 +829,19 @@ void AppController::syncNow()
     refreshAndSync(false);
 }
 
-void AppController::refreshAndSync(bool freshLogin)
+void AppController::refreshAndSync(bool freshLogin, bool background)
 {
     m_api.refreshToken(m_refreshToken,
-                       [this, freshLogin](Api::Result<Api::TokenResponse> r) {
+                       [this, freshLogin, background](
+                           Api::Result<Api::TokenResponse> r) {
         if (!r.ok()) {
             setBusy(false);
+            if (background) {
+                // Silent: an expired session or no network during an
+                // auto-sync must not block offline unlock or flip the lock
+                // screen to login. A manual "Sync now" reports the error.
+                return;
+            }
             setError(QStringLiteral("session expired — sign in again"));
             storeRefreshToken(QByteArray());
             if (m_vault.isLocked()) {
@@ -813,11 +854,14 @@ void AppController::refreshAndSync(bool freshLogin)
             storeRefreshToken(r.value.refreshToken);
         }
         m_api.sync(m_accessToken,
-                   [this, freshLogin](Api::Result<QByteArray> result) {
+                   [this, freshLogin, background](
+                       Api::Result<QByteArray> result) {
             if (!result.ok()) {
                 setBusy(false);
-                setError(QStringLiteral("sync failed: %1")
-                             .arg(result.error.message));
+                if (!background) {
+                    setError(QStringLiteral("sync failed: %1")
+                                 .arg(result.error.message));
+                }
                 return;
             }
             applySyncBlob(result.value, freshLogin);
@@ -1165,6 +1209,9 @@ void AppController::handleAppStateChanged(Qt::ApplicationState state)
     if (state != Qt::ApplicationActive && lockOnMinimize()
             && !m_vault.isLocked()) {
         lock();
+    } else if (state == Qt::ApplicationActive) {
+        // Foregrounded (app opened/resumed): refresh the vault if stale.
+        maybeAutoSync();
     }
 }
 

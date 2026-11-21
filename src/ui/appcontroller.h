@@ -207,7 +207,13 @@ private:
 
     void finishLogin(const Api::TokenResponse &token);
     void applySyncBlob(const QByteArray &blob, bool freshLogin);
-    void refreshAndSync(bool freshLogin);
+    // background=true: failures stay silent (no error, no state change) so an
+    // auto-sync can never block offline unlock or kick the user off the lock
+    // screen; a manual "Sync now" reports errors as before.
+    void refreshAndSync(bool freshLogin, bool background = false);
+    // Syncs when the local vault is over a day old (or has no recorded sync
+    // time). Self-guards on the refresh token; silent on failure.
+    void maybeAutoSync();
 
     // A cipher write: given a valid access token, invoke the ApiClient call
     // and deliver its result.
