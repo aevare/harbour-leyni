@@ -14,6 +14,12 @@
 #include "passwordgen.h"
 #include "pinwrap.h"
 
+// Set by CMake (LEYNI_APP_VERSION) from the spec Version in rpm builds; this
+// backstop covers builds configured without it (plain local cmake runs).
+#ifndef LEYNI_APP_VERSION
+#define LEYNI_APP_VERSION "dev"
+#endif
+
 namespace Leyni {
 namespace Ui {
 
@@ -103,6 +109,11 @@ AppController::AppController(QObject *parent)
     } else {
         m_state = QStringLiteral("login");
     }
+}
+
+QString AppController::appVersion() const
+{
+    return QStringLiteral(LEYNI_APP_VERSION);
 }
 
 QString AppController::serverUrl() const

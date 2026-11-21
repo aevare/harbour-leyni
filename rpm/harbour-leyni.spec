@@ -41,7 +41,9 @@ PackageIcon: https://raw.githubusercontent.com/aevare/harbour-leyni/main/icons/1
 %setup -q -n %{name}-%{version}
 
 %build
-%cmake -DBUILD_APP=ON
+# LEYNI_VERSION becomes the version shown in Settings (App.appVersion); the
+# release workflow's verify job already enforces tag == spec Version.
+%cmake -DBUILD_APP=ON -DLEYNI_VERSION=%{version}
 %make_build
 
 %install

@@ -34,6 +34,18 @@ if(BUILD_APP)
         OWNER_READ OWNER_WRITE OWNER_EXECUTE
         GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
+    # Version shown in Settings (App.appVersion). rpm builds pass
+    # -DLEYNI_VERSION=%{version} from the spec (the release workflow already
+    # verifies tag == spec Version); a LEYNI_VERSION env var covers direct
+    # local cmake runs; otherwise fall back to "dev".
+    if(NOT DEFINED LEYNI_VERSION)
+        if(DEFINED ENV{LEYNI_VERSION})
+            set(LEYNI_VERSION "$ENV{LEYNI_VERSION}")
+        else()
+            set(LEYNI_VERSION "dev")
+        endif()
+    endif()
+
     add_executable(harbour-leyni
         src/main.cpp
         src/ui/appcontroller.cpp
@@ -41,6 +53,7 @@ if(BUILD_APP)
     )
     target_compile_definitions(harbour-leyni PRIVATE
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>
+        LEYNI_APP_VERSION="${LEYNI_VERSION}"
     )
     # No $<BUILD_INTERFACE:> genex here: on the SFOS 5.0 target's CMake it
     # mangles the first pkg-config dir into a build-dir-relative path.

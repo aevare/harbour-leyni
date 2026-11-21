@@ -59,6 +59,9 @@ class AppController : public QObject
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
     Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
     Q_PROPERTY(QObject *vaultModel READ vaultModel CONSTANT)
+    // Build-time version string (LEYNI_APP_VERSION, from the spec Version in
+    // rpm builds; "dev" in plain local builds) — shown on the settings page.
+    Q_PROPERTY(QString appVersion READ appVersion CONSTANT)
     Q_PROPERTY(QString serverUrl READ serverUrl NOTIFY accountChanged)
     Q_PROPERTY(QString email READ email NOTIFY accountChanged)
     Q_PROPERTY(int itemCount READ itemCount NOTIFY vaultChanged)
@@ -81,6 +84,7 @@ public:
     bool busy() const { return m_busy; }
     QString lastError() const { return m_lastError; }
     QObject *vaultModel() { return &m_model; }
+    QString appVersion() const;
     QString serverUrl() const;
     QString email() const;
     int itemCount() const { return static_cast<int>(m_vault.items().size()); }

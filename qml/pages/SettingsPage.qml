@@ -126,6 +126,13 @@ Page {
                 onClicked: signOutRemorse.execute(qsTr("Signing out"),
                                                   function() { App.signOut() })
             }
+
+            SectionHeader { text: qsTr("About") }
+
+            ValueItem {
+                label: qsTr("Version")
+                value: App.appVersion
+            }
         }
 
         VerticalScrollDecorator {}
