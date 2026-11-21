@@ -1,5 +1,17 @@
 # Add newest entries at the top.
 
+* Sat Nov 21 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.4.3
+- Show the app version in Settings → About, baked in from the release at
+  build time (local builds show "dev")
+- Norwegian (Bokmål) translations
+- Auto-sync the vault when the local copy is over a day old: on app open,
+  when foregrounded, and after unlock; background syncs fail silently so
+  offline unlock keeps working
+- The lock screen now offers only Sync now and Sign out
+- Busy spinner in the top bar while the app works (login, unlock, sync, writes)
+- Fix vault section headers (Favourites / Other items) being cut off at the
+  right screen edge
+
 * Sat Nov 21 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.4.2
 - Release RPMs carry a keyless Sigstore build-provenance attestation; verify
   an asset was built by this repo's release workflow with
