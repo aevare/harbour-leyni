@@ -553,77 +553,77 @@
 <context>
     <name>VaultPage</name>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="80"/>
+        <location filename="../qml/pages/VaultPage.qml" line="82"/>
         <source>Favourites</source>
         <translation>Favoritter</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="81"/>
+        <location filename="../qml/pages/VaultPage.qml" line="83"/>
         <source>Other items</source>
         <translation>Andre elementer</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="88"/>
+        <location filename="../qml/pages/VaultPage.qml" line="90"/>
         <source>Vault</source>
         <translation>Hvelv</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="93"/>
+        <location filename="../qml/pages/VaultPage.qml" line="95"/>
         <source>Search vault</source>
         <translation>Søk i hvelvet</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="110"/>
+        <location filename="../qml/pages/VaultPage.qml" line="112"/>
         <source>Folder</source>
         <translation>Mappe</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="113"/>
+        <location filename="../qml/pages/VaultPage.qml" line="115"/>
         <source>All items</source>
         <translation>Alle elementer</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="114"/>
+        <location filename="../qml/pages/VaultPage.qml" line="116"/>
         <source>No folder</source>
         <translation>Ingen mappe</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="134"/>
+        <location filename="../qml/pages/VaultPage.qml" line="136"/>
         <source>Settings</source>
         <translation>Innstillinger</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="138"/>
+        <location filename="../qml/pages/VaultPage.qml" line="140"/>
         <source>Sync</source>
         <translation>Synkroniser</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="142"/>
+        <location filename="../qml/pages/VaultPage.qml" line="144"/>
         <source>Lock now</source>
         <translation>Lås nå</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="146"/>
+        <location filename="../qml/pages/VaultPage.qml" line="148"/>
         <source>Generate password</source>
         <translation>Generer passord</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="150"/>
+        <location filename="../qml/pages/VaultPage.qml" line="152"/>
         <source>Copy</source>
         <translation>Kopier</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="157"/>
+        <location filename="../qml/pages/VaultPage.qml" line="159"/>
         <source>New item</source>
         <translation>Nytt element</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="241"/>
+        <location filename="../qml/pages/VaultPage.qml" line="243"/>
         <source>No matches</source>
         <translation>Ingen treff</translation>
     </message>
     <message>
-        <location filename="../qml/pages/VaultPage.qml" line="241"/>
+        <location filename="../qml/pages/VaultPage.qml" line="243"/>
         <source>No items</source>
         <translation>Ingen elementer</translation>
     </message>

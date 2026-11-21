@@ -74,9 +74,11 @@ Page {
             height: listView.model.hasFavorites ? sectionLabel.height : 0
             clip: true
 
+            // No width here: Silica's SectionHeader sizes itself to
+            // parent.width - 2*x. Overriding width pushed the right-aligned
+            // text past the right screen edge.
             SectionHeader {
                 id: sectionLabel
-                width: parent.width
                 text: section === "true" ? qsTr("Favourites")
                                          : qsTr("Other items")
             }
