@@ -129,7 +129,7 @@ Page {
 
             SectionHeader { text: qsTr("About") }
 
-            ValueItem {
+            DetailItem {
                 label: qsTr("Version")
                 value: App.appVersion
             }
