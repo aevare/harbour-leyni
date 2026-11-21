@@ -125,6 +125,11 @@ void AppController::setAutoLockMinutes(int minutes)
     m_settings.setValue(QLatin1String(kSettingAutoLockMinutes), minutes);
     m_vault.setAutoLockSeconds(minutes * 60);
     emit settingsChanged();
+    // Settings shows no lastError, so confirm the change through the same
+    // global notice banner as the other App feedback (cf. enablePin).
+    emit notify(minutes <= 0 ? QStringLiteral("Auto-lock off")
+                             : QStringLiteral("Auto-lock after %1 min")
+                                   .arg(minutes));
 }
 
 int AppController::clipboardClearSeconds() const
@@ -137,6 +142,9 @@ void AppController::setClipboardClearSeconds(int seconds)
 {
     m_settings.setValue(QLatin1String(kSettingClipboardSeconds), seconds);
     emit settingsChanged();
+    emit notify(seconds <= 0 ? QStringLiteral("Clipboard auto-clear off")
+                             : QStringLiteral("Clipboard clears in %1 s")
+                                   .arg(seconds));
 }
 
 bool AppController::lockOnMinimize() const
@@ -149,6 +157,8 @@ void AppController::setLockOnMinimize(bool on)
 {
     m_settings.setValue(QLatin1String(kSettingLockOnMinimize), on);
     emit settingsChanged();
+    emit notify(on ? QStringLiteral("Lock when minimized: on")
+                   : QStringLiteral("Lock when minimized: off"));
 }
 
 void AppController::setState(const QString &state)
