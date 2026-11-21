@@ -1,5 +1,10 @@
 # Add newest entries at the top.
 
+* Sat Nov 21 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.4.2
+- Release RPMs carry a keyless Sigstore build-provenance attestation; verify
+  an asset was built by this repo's release workflow with
+  `gh attestation verify <file>.rpm --repo aevare/harbour-leyni`
+
 * Sat Nov 21 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.4.1
 - Fix creating and editing items on Vaultwarden 1.37 and newer (server
   rejected them with HTTP 422). After updating, sync the vault once before
