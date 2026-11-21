@@ -73,8 +73,6 @@ class AppController : public QObject
                    WRITE setClipboardClearSeconds NOTIFY settingsChanged)
     Q_PROPERTY(bool lockOnMinimize READ lockOnMinimize
                    WRITE setLockOnMinimize NOTIFY settingsChanged)
-    // True when a PIN-wrapped master key exists on disk: the unlock screen
-    // offers PIN entry, and Settings shows the feature as enabled.
     Q_PROPERTY(bool pinEnabled READ pinEnabled NOTIFY pinChanged)
 
 public:
@@ -105,10 +103,8 @@ public:
     // memory between unlocks.
     Q_INVOKABLE void enablePin(const QString &masterPassword,
                                const QString &pin);
-    // Forget the PIN-wrapped key; next unlock needs the master password.
     Q_INVOKABLE void disablePin();
 
-    // --- account/session ---
     Q_INVOKABLE void configureAccount(const QString &serverUrl,
                                       const QString &email);
     Q_INVOKABLE void startLogin(const QString &password);
@@ -127,7 +123,6 @@ public:
     // Forgets tokens and the local blob; back to "login" (keeps account).
     Q_INVOKABLE void signOut();
 
-    // --- write support (create/edit/soft-delete) ---
     // `fields` is a QVariantMap of plaintext entered in QML (keys: name,
     // notes, folderId, favorite, and for logins username/password/uri/totp).
     // The vault encrypts it; plaintext never leaves this process unencrypted.
@@ -136,16 +131,13 @@ public:
     Q_INVOKABLE void saveItem(const QString &itemId, const QVariantMap &fields);
     Q_INVOKABLE void deleteItem(const QString &itemId);
 
-    // --- password generator ---
     // Generates a password from `options` (keys: length, lowercase, uppercase,
     // digits, symbols, avoidAmbiguous). Returns empty + sets lastError on an
     // impossible combination (the UI also guards against those).
     Q_INVOKABLE QString generatePassword(const QVariantMap &options);
-    // Last-used generator options (persisted), so the dialog restores them.
     Q_INVOKABLE QVariantMap generatorOptions() const;
     Q_INVOKABLE void setGeneratorOptions(const QVariantMap &options);
 
-    // --- item access (thin proxies over Vault; see vault.h) ---
     Q_INVOKABLE QString itemPassword(const QString &itemId);
     Q_INVOKABLE QString itemNotes(const QString &itemId);
     // Raw TOTP secret for prefilling the editor (not a generated code).
@@ -155,7 +147,6 @@ public:
     Q_INVOKABLE QString folderName(const QString &folderId);
     Q_INVOKABLE QVariantList folders();
 
-    // --- clipboard with auto-clear ---
     Q_INVOKABLE void copyToClipboard(const QString &text);
 
     Q_INVOKABLE void noteActivity();
@@ -202,7 +193,6 @@ private:
     // Startup: move pre-Secrets values (pin.dat, settings.conf token/counter)
     // into Secrets, then load the cached state below.
     void loadSecrets();
-    // Delete the wrapped key + reset the counter, then notify QML.
     void forgetPin();
 
     void finishLogin(const Api::TokenResponse &token);
@@ -226,10 +216,8 @@ private:
     // (401/403). On success re-syncs and reloads from the server's response.
     void writeAndResync(const CipherWriteCall &doWrite,
                         const QString &successMessage);
-    // Refresh the access token, then run the write. Used as the fallback path.
     void refreshThenWrite(const CipherWriteCall &doWrite,
                           const QString &successMessage);
-    // Handle a write result: on success re-sync + reload; else notify.
     void finishWrite(const Api::Result<QByteArray> &writeResult,
                      const QString &successMessage);
     // Post-write reload (vault is unlocked): persist blob, reloadSync, refresh

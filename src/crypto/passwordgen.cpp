@@ -24,7 +24,6 @@ uint32_t random32()
          | static_cast<uint32_t>(b[3]);
 }
 
-// Applies the ambiguous-character filter to a class string.
 std::string filterAmbiguous(const std::string &s, bool avoid)
 {
     static const std::string kAmbiguous = "Il1O0o";
@@ -95,7 +94,6 @@ std::string generatePassword(const PasswordOptions &opts)
         throw CryptoError("generatePassword: no character class enabled");
     }
 
-    // At least one of every enabled class; digits/symbols honor their minima.
     const int reqLower = lower.empty() ? 0 : 1;
     const int reqUpper = upper.empty() ? 0 : 1;
     const int reqDigit = digit.empty() ? 0 : std::max(1, opts.minDigits);

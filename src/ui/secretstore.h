@@ -28,7 +28,6 @@ public:
         Unavailable, // daemon unreachable, collection locked, ...
     };
 
-    // Stores `data` under `name`, replacing any previous value.
     bool store(const QString &name, const QByteArray &data);
 
     // `out` is cleared unless the status is Found.

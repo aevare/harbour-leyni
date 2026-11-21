@@ -17,7 +17,6 @@ Page {
         pinField.text = ""
     }
 
-    // Open the keyboard straight away on whichever field is shown.
     function focusInput() {
         if (page.usePassword) {
             passwordField.forceActiveFocus()
@@ -73,7 +72,6 @@ Page {
                 color: Theme.secondaryHighlightColor
             }
 
-            // --- PIN entry (default when a PIN is set up) ---
             PasswordField {
                 id: pinField
                 visible: !page.usePassword
@@ -92,7 +90,6 @@ Page {
                 onClicked: App.unlockWithPin(pinField.text)
             }
 
-            // --- master password entry ---
             PasswordField {
                 id: passwordField
                 visible: page.usePassword
@@ -110,8 +107,6 @@ Page {
                 onClicked: App.unlock(passwordField.text)
             }
 
-            // Toggle between the two. Hidden when no PIN exists (nothing to
-            // toggle to).
             BackgroundItem {
                 visible: App.pinEnabled
                 width: parent.width

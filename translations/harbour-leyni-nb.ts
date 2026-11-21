@@ -120,62 +120,62 @@
         <translation>Kopier navn</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="153"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="152"/>
         <source>Username</source>
         <translation>Brukernavn</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="192"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="190"/>
         <source>Password</source>
         <translation>Passord</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="247"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="244"/>
         <source>Verification code</source>
         <translation>Verifiseringskode</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="263"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="260"/>
         <source>%1 s</source>
         <translation>%1 s</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="297"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="293"/>
         <source>Website</source>
         <translation>Nettsted</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="321"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="317"/>
         <source>Notes</source>
         <translation>Notater</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="331"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="327"/>
         <source>Hide notes</source>
         <translation>Skjul notater</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="331"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="327"/>
         <source>Show notes</source>
         <translation>Vis notater</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="355"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="351"/>
         <source>No notes</source>
         <translation>Ingen notater</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="361"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="357"/>
         <source>Details</source>
         <translation>Detaljer</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="368"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="364"/>
         <source>Hide details</source>
         <translation>Skjul detaljer</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemDetailPage.qml" line="368"/>
+        <location filename="../qml/pages/ItemDetailPage.qml" line="364"/>
         <source>Show details</source>
         <translation>Vis detaljer</translation>
     </message>
@@ -183,101 +183,101 @@
 <context>
     <name>ItemEditPage</name>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="96"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="95"/>
         <source>Edit item</source>
         <translation>Rediger element</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="96"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="95"/>
         <source>New item</source>
         <translation>Nytt element</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="97"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="96"/>
         <source>Save</source>
         <translation>Lagre</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="105"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="104"/>
         <source>Type</source>
         <translation>Type</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="108"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="107"/>
         <source>Login</source>
         <translation>Innlogging</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="109"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="108"/>
         <source>Secure note</source>
         <translation>Sikkert notat</translation>
     </message>
     <message>
+        <location filename="../qml/pages/ItemEditPage.qml" line="116"/>
         <location filename="../qml/pages/ItemEditPage.qml" line="117"/>
-        <location filename="../qml/pages/ItemEditPage.qml" line="118"/>
         <source>Name</source>
         <translation>Navn</translation>
     </message>
     <message>
+        <location filename="../qml/pages/ItemEditPage.qml" line="128"/>
         <location filename="../qml/pages/ItemEditPage.qml" line="129"/>
-        <location filename="../qml/pages/ItemEditPage.qml" line="130"/>
         <source>Username</source>
         <translation>Brukernavn</translation>
     </message>
     <message>
+        <location filename="../qml/pages/ItemEditPage.qml" line="138"/>
         <location filename="../qml/pages/ItemEditPage.qml" line="139"/>
-        <location filename="../qml/pages/ItemEditPage.qml" line="140"/>
         <source>Password</source>
         <translation>Passord</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="146"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="145"/>
         <source>Generate password</source>
         <translation>Generer passord</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="150"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="149"/>
         <source>Use</source>
         <translation>Bruk</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="161"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="160"/>
         <source>Website (URI)</source>
         <translation>Nettsted (URI)</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="162"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="161"/>
         <source>https://example.com</source>
         <translation>https://eksempel.no</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="171"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="170"/>
         <source>Authenticator key (TOTP)</source>
         <translation>Autentiseringsnøkkel (TOTP)</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="172"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="171"/>
         <source>otpauth:// URI or secret</source>
         <translation>otpauth://-URI eller hemmelighet</translation>
     </message>
     <message>
+        <location filename="../qml/pages/ItemEditPage.qml" line="178"/>
         <location filename="../qml/pages/ItemEditPage.qml" line="179"/>
-        <location filename="../qml/pages/ItemEditPage.qml" line="180"/>
         <source>Notes</source>
         <translation>Notater</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="186"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="185"/>
         <source>Folder</source>
         <translation>Mappe</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="189"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="188"/>
         <source>No folder</source>
         <translation>Ingen mappe</translation>
     </message>
     <message>
-        <location filename="../qml/pages/ItemEditPage.qml" line="199"/>
+        <location filename="../qml/pages/ItemEditPage.qml" line="198"/>
         <source>Favourite</source>
         <translation>Favoritt</translation>
     </message>
@@ -451,52 +451,52 @@
 <context>
     <name>TwoFactorPage</name>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="26"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="25"/>
         <source>Cancel</source>
         <translation>Avbryt</translation>
     </message>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="36"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="35"/>
         <source>Verify it&apos;s you</source>
         <translation>Bekreft at det er deg</translation>
     </message>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="41"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="40"/>
         <source>Verification method</source>
         <translation>Bekreftelsesmetode</translation>
     </message>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="49"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="48"/>
         <source>Authenticator app</source>
         <translation>Autentiseringsapp</translation>
     </message>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="49"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="48"/>
         <source>Email</source>
         <translation>E-post</translation>
     </message>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="62"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="61"/>
         <source>Send code</source>
         <translation>Send kode</translation>
     </message>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="71"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="70"/>
         <source>Verification code</source>
         <translation>Verifiseringskode</translation>
     </message>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="72"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="71"/>
         <source>123456</source>
         <translation>123456</translation>
     </message>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="80"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="79"/>
         <source>Remember this device</source>
         <translation>Husk denne enheten</translation>
     </message>
     <message>
-        <location filename="../qml/pages/TwoFactorPage.qml" line="85"/>
+        <location filename="../qml/pages/TwoFactorPage.qml" line="84"/>
         <source>Verify</source>
         <translation>Bekreft</translation>
     </message>
@@ -504,48 +504,48 @@
 <context>
     <name>UnlockPage</name>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="46"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="45"/>
         <source>Sync now</source>
         <translation>Synkroniser nå</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="50"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="49"/>
         <source>Sign out</source>
         <translation>Logg ut</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="51"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="50"/>
         <source>Signing out</source>
         <translation>Logger ut</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="61"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="60"/>
         <source>Leyni</source>
         <translation>Leyni</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="81"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="79"/>
         <source>PIN</source>
         <translation>PIN</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="90"/>
-        <location filename="../qml/pages/UnlockPage.qml" line="108"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="88"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="105"/>
         <source>Unlock</source>
         <translation>Lås opp</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="100"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="97"/>
         <source>Master password</source>
         <translation>Hovedpassord</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="127"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="122"/>
         <source>Use PIN</source>
         <translation>Bruk PIN-kode</translation>
     </message>
     <message>
-        <location filename="../qml/pages/UnlockPage.qml" line="128"/>
+        <location filename="../qml/pages/UnlockPage.qml" line="123"/>
         <source>Use master password</source>
         <translation>Bruk hovedpassord</translation>
     </message>

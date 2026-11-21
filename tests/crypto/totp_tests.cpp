@@ -35,7 +35,6 @@ void runTotpTests()
         CHECK(decodesTo("MZXW6YQ=", "foob"));
         CHECK(decodesTo("MZXW6YTB", "fooba"));
         CHECK(decodesTo("MZXW6YTBOI======", "foobar"));
-        // Authenticator conventions: lowercase, spaces, no padding.
         CHECK(decodesTo("mzxw6ytboi", "foobar"));
         CHECK(decodesTo("MZXW 6YTB OI", "foobar"));
         CHECK_THROWS(base32Decode("MZXW1===")); // '1' not in alphabet
@@ -99,7 +98,6 @@ void runTotpTests()
         CHECK(code.size() == 8);
     }
 
-    // Error paths.
     {
         const SecureBytes key = asciiKey("12345678901234567890");
         CHECK_THROWS(hotp(SecureBytes(), 0, 6, TotpAlgorithm::Sha1));

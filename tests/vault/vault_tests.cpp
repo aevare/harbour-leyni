@@ -85,7 +85,6 @@ void testParseSyncJson(const QByteArray &fixtureJson)
 
 void testSyncparserNegatives()
 {
-    // Garbage bytes: not JSON at all.
     {
         SyncData data;
         QString error;
@@ -93,7 +92,6 @@ void testSyncparserNegatives()
         CHECK(!error.isEmpty());
     }
 
-    // Structurally valid JSON, but no profile at all.
     {
         SyncData data;
         QString error;
@@ -174,7 +172,6 @@ void testUnlockAndLookups(const QByteArray &fixtureJson)
     std::printf("items(): OK (found Example Login, Work Login, Fixture Note, "
                 "Fixture Card)\n");
 
-    // --- on-demand secret access ---
     {
         QString err;
         const QString pw = vault.itemPassword(login1->id, &err);
@@ -224,7 +221,6 @@ void testUnlockAndLookups(const QByteArray &fixtureJson)
     }
     std::printf("totpCode: OK (RFC 4226 Appendix D values)\n");
 
-    // --- VaultListModel ---
     {
         VaultListModel model(&vault);
         model.refresh();
@@ -370,7 +366,6 @@ void testReloadSync(const QByteArray &fixtureJson)
                        toSecureBytes("FixtureVault123!"), fixtureKdf(),
                        &error));
 
-    // Same blob again (unchanged protected key): stays unlocked, items intact.
     const size_t itemCount = vault.items().size();
     CHECK(vault.reloadSync(fixtureJson, &error));
     CHECK(!vault.isLocked());
@@ -396,7 +391,6 @@ void testReloadSync(const QByteArray &fixtureJson)
     CHECK(vault.isLocked());
     CHECK(vault.items().empty());
 
-    // While locked, reloadSync must refuse outright.
     CHECK(!vault.reloadSync(fixtureJson, &error));
 }
 
@@ -426,7 +420,6 @@ QByteArray wrapBodyAsSync(const QByteArray &fixtureJson,
     return QJsonDocument(root).toJson(QJsonDocument::Compact);
 }
 
-// The fixture cipher id whose decrypted name matches `name`.
 QString cipherIdForName(const QByteArray &fixtureJson, const QString &name)
 {
     Vault vault;
@@ -587,7 +580,6 @@ void testBuildUpdateBodyPreserves(const QByteArray &fixtureJson)
     CHECK(!body.isEmpty());
     const QJsonObject obj = QJsonDocument::fromJson(body).object();
 
-    // Response-only keys stripped.
     CHECK(!obj.contains(QStringLiteral("id")));
     CHECK(!obj.contains(QStringLiteral("object")));
     CHECK(!obj.contains(QStringLiteral("revisionDate")));
@@ -595,7 +587,6 @@ void testBuildUpdateBodyPreserves(const QByteArray &fixtureJson)
     CHECK(obj.value(QStringLiteral("lastKnownRevisionDate")).toString()
           == QStringLiteral("2021-05-05T10:00:00Z"));
 
-    // Unmodeled data preserved verbatim.
     const QJsonArray keptFields = obj.value(QStringLiteral("fields")).toArray();
     CHECK(keptFields.size() == 1);
     CHECK(keptFields.at(0).toObject().value(QStringLiteral("value")).toString()
@@ -630,7 +621,6 @@ void testSoftDeletedSkipped(const QByteArray &fixtureJson)
     QJsonArray ciphers = root.value(QStringLiteral("ciphers")).toArray();
     const int before = ciphers.size();
     CHECK(before >= 1);
-    // Mark the first cipher as trashed.
     QJsonObject first = ciphers.at(0).toObject();
     first.insert(QStringLiteral("deletedDate"),
                  QStringLiteral("2022-02-02T02:02:02Z"));

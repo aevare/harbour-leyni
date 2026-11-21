@@ -7,7 +7,6 @@ using namespace Leyni::Crypto;
 
 void runSecureBytesTests()
 {
-    // Construction
     {
         SecureBytes empty;
         CHECK(empty.empty());
@@ -26,7 +25,6 @@ void runSecureBytesTests()
         CHECK(std::memcmp(copied.data(), src, 4) == 0);
     }
 
-    // Move transfers ownership and empties the source.
     {
         const uint8_t src[] = {9, 8, 7};
         SecureBytes a(src, sizeof(src));
@@ -43,7 +41,6 @@ void runSecureBytesTests()
         CHECK(b.data() == nullptr);
     }
 
-    // Constant-time equality
     {
         const uint8_t x[] = {1, 2, 3};
         const uint8_t y[] = {1, 2, 4};
@@ -58,7 +55,6 @@ void runSecureBytesTests()
         CHECK(e1 == e2);
     }
 
-    // secureZero actually zeroes.
     {
         uint8_t buf[32];
         std::memset(buf, 0xAA, sizeof(buf));
@@ -68,7 +64,6 @@ void runSecureBytesTests()
         }
     }
 
-    // constantTimeEqual basics.
     {
         const uint8_t x[] = {0xde, 0xad};
         const uint8_t y[] = {0xde, 0xad};

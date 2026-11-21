@@ -61,8 +61,6 @@ struct ApiError {
     bool isEmpty() const { return httpStatus == 0 && !networkError; }
 };
 
-// --- request bodies ---
-
 QByteArray buildPreloginBody(const QString &email);
 
 // grant_type=password. The master password hash arrives pre-encoded
@@ -86,8 +84,6 @@ QByteArray buildSendEmailLoginBody(const QString &email,
 
 // The Auth-Email header value: base64url(email), unpadded.
 QByteArray authEmailHeaderValue(const QString &email);
-
-// --- response parsing (each returns false and fills error on failure) ---
 
 bool parsePreloginResponse(const QByteArray &body, PreloginResponse *out,
                            QString *errorMessage);

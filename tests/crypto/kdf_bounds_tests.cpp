@@ -11,7 +11,6 @@ void runKdfBoundsTests()
     std::vector<uint8_t> pw = {'p', 'w'};
     SecureBytes password(pw.data(), pw.size());
 
-    // PBKDF2 bounds.
     CHECK_THROWS(pbkdf2Sha256(password, salt, sizeof(salt), 0, 32));
     CHECK_THROWS(pbkdf2Sha256(password, salt, sizeof(salt),
                               kMaxPbkdf2Iterations + 1, 32));
@@ -29,14 +28,12 @@ void runKdfBoundsTests()
     CHECK_THROWS(argon2id(password, salt, sizeof(salt), 3, 64,
                           kMaxArgon2Parallelism + 1, 32));
 
-    // deriveMasterKey input validation.
     KdfParams params;
     params.type = KdfType::Pbkdf2Sha256;
     params.iterations = 600000;
     CHECK_THROWS(deriveMasterKey(SecureBytes(), "user@example.com", params));
     CHECK_THROWS(deriveMasterKey(password, "", params));
 
-    // deriveMasterPasswordHash input validation.
     CHECK_THROWS(deriveMasterPasswordHash(SecureBytes(), password));
     CHECK_THROWS(deriveMasterPasswordHash(password, SecureBytes()));
 
@@ -51,7 +48,6 @@ void runKdfBoundsTests()
         CHECK(k1 != k2);
     }
 
-    // Argon2id smoke test: deterministic, 32 bytes, email-sensitive.
     {
         KdfParams p;
         p.type = KdfType::Argon2id;

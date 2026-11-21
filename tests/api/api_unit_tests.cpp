@@ -57,8 +57,6 @@ void testServerConfig()
           == QStringLiteral("http://localhost:8000/identity/connect/token"));
     CHECK(self.syncUrl() == QStringLiteral("http://localhost:8000/api/sync"));
 
-    // Trailing-slash trimming: more than one trailing slash, and a bare
-    // (no-trailing-slash) URL both normalize the same way.
     const ServerConfig manySlashes = ServerConfig::selfHosted(
         QStringLiteral("http://localhost:8000///"));
     CHECK(manySlashes.identityBase
@@ -117,7 +115,6 @@ void testBuildPasswordTokenBody()
         CHECK(body.contains("deviceType="));
         CHECK(body.contains("deviceIdentifier=device-uuid-1"));
         CHECK(body.contains("deviceName="));
-        // No 2FA fields when none requested.
         CHECK(!body.contains("twoFactorProvider"));
     }
     {
@@ -232,7 +229,6 @@ void testParseTokenResponse()
 void testParseTokenError()
 {
     {
-        // 2FA challenge body.
         const QByteArray body =
             "{\"error\":\"invalid_grant\",\"error_description\":"
             "\"Two factor required.\",\"TwoFactorProviders\":[\"0\",\"1\"],"
@@ -244,7 +240,6 @@ void testParseTokenError()
         CHECK(error.twoFactorProviders.contains(1));
     }
     {
-        // Plain wrong-password failure.
         const QByteArray body =
             "{\"error\":\"invalid_grant\",\"error_description\":"
             "\"Username or password is incorrect. Try again\"}";
@@ -253,14 +248,12 @@ void testParseTokenError()
         CHECK(!error.twoFactorRequired);
     }
     {
-        // Captcha challenge.
         const QByteArray body =
             "{\"error\":\"invalid_grant\",\"HCaptcha_SiteKey\":\"abc123\"}";
         const ApiError error = parseTokenError(400, body);
         CHECK(error.captchaRequired);
     }
     {
-        // Non-JSON body: fall back to a bare HTTP-status message.
         const ApiError error = parseTokenError(400, "not json");
         CHECK(error.message == QStringLiteral("HTTP 400"));
     }

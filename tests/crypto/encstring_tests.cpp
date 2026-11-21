@@ -9,7 +9,6 @@ namespace {
 
 SymmetricKey testKey()
 {
-    // Fixed, arbitrary test key (NOT a real secret).
     std::vector<uint8_t> enc = fromHex(
         "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
     std::vector<uint8_t> mac = fromHex(
@@ -38,7 +37,6 @@ void runEncStringTests()
 {
     const SymmetricKey key = testKey();
 
-    // Round-trip: encrypt → serialize → parse → decrypt.
     {
         const std::string plaintext = "the quick brown fox jumps over 16";
         EncString enc = encryptAes256CbcHmac(fromText(plaintext), key);
@@ -52,7 +50,6 @@ void runEncStringTests()
         CHECK(toText(decrypted) == plaintext);
     }
 
-    // Deterministic encryption with a fixed IV is stable and reversible.
     {
         const uint8_t iv[16] = {0};
         EncString a = encryptAes256CbcHmacWithIv(fromText("secret"), key, iv);
@@ -97,7 +94,6 @@ void runEncStringTests()
         CHECK_THROWS(decryptAes256CbcHmac(enc, wrong));
     }
 
-    // --- Parser negatives. ---
     CHECK_THROWS(EncString::parse(""));                    // empty
     CHECK_THROWS(EncString::parse("2"));                   // no dot
     CHECK_THROWS(EncString::parse(".aa|bb|cc"));           // empty type
@@ -117,7 +113,6 @@ void runEncStringTests()
                                       "AAAAAAAAA="));
     }
 
-    // decryptRsaOaepSha1 rejects wrong type.
     {
         EncString enc = encryptAes256CbcHmac(fromText("x"), key);
         CHECK_THROWS(decryptRsaOaepSha1(enc, SecureBytes()));

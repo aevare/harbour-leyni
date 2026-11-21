@@ -19,7 +19,6 @@
         }                                                                    \
     } while (0)
 
-// The expression must throw CryptoError; anything else is a failure.
 #define CHECK_THROWS(expr)                                                   \
     do {                                                                     \
         bool threw_ = false;                                                 \

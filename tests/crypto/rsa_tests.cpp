@@ -29,7 +29,6 @@ struct PkeyCtxDeleter {
 
 void runRsaTests()
 {
-    // Generate a throwaway RSA-2048 key.
     std::unique_ptr<EVP_PKEY_CTX, PkeyCtxDeleter> genCtx(
         EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr));
     CHECK(genCtx != nullptr);
@@ -39,7 +38,6 @@ void runRsaTests()
     CHECK(EVP_PKEY_keygen(genCtx.get(), &rawKey) == 1);
     std::unique_ptr<EVP_PKEY, PkeyDeleter> pkey(rawKey);
 
-    // DER-encode the private key the way the vault stores it.
     int derLen = i2d_PrivateKey(pkey.get(), nullptr);
     CHECK(derLen > 0);
     std::vector<uint8_t> der(static_cast<size_t>(derLen));
@@ -47,7 +45,6 @@ void runRsaTests()
     CHECK(i2d_PrivateKey(pkey.get(), &derPtr) == derLen);
     SecureBytes derKey(der.data(), der.size());
 
-    // Encrypt a 64-byte "org key" with OpenSSL's OAEP-SHA1 directly.
     std::vector<uint8_t> orgKey(64);
     for (size_t i = 0; i < orgKey.size(); ++i) {
         orgKey[i] = static_cast<uint8_t>(i * 3 + 1);
@@ -68,7 +65,6 @@ void runRsaTests()
     ciphertext.resize(ctLen);
     CHECK(ciphertext.size() == 256); // RSA-2048
 
-    // Our unwrap must recover it, both directly and via an EncString type 4.
     {
         SecureBytes plain = rsaOaepSha1Decrypt(derKey, ciphertext.data(),
                                                ciphertext.size());
@@ -84,7 +80,6 @@ void runRsaTests()
         CHECK(constantTimeEqual(plain.data(), orgKey.data(), orgKey.size()));
     }
 
-    // Negatives: tampered ciphertext and truncated/garbage key fail closed.
     {
         std::vector<uint8_t> bad = ciphertext;
         bad[128] ^= 0x01;

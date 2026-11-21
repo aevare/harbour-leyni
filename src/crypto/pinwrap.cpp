@@ -16,7 +16,6 @@ namespace {
 constexpr size_t kSaltLen = 16;
 constexpr char kTag[] = "BWPIN1";
 
-// Derives the 64-byte key-encryption-key (32 enc + 32 mac) from the PIN.
 SymmetricKey deriveKek(const SecureBytes &pin, const std::vector<uint8_t> &salt,
                        const PinWrapParams &params)
 {
@@ -25,7 +24,6 @@ SymmetricKey deriveKek(const SecureBytes &pin, const std::vector<uint8_t> &salt,
     return symmetricKeyFromBytes(raw);
 }
 
-// Parses a decimal field into a bounded uint32, throwing on anything else.
 uint32_t parseUint(const std::string &s)
 {
     if (s.empty() || s.size() > 9) {

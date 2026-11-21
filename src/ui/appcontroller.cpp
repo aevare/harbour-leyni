@@ -29,7 +29,6 @@ const char kSettingServer[] = "account/serverUrl";
 const char kSettingEmail[] = "account/email";
 const char kSettingDeviceId[] = "account/deviceId";
 const char kSettingRefreshToken[] = "session/refreshToken";
-// Secret names in the app's Sailfish Secrets collection (see secretstore.h).
 const QString kSecretPinKey = QStringLiteral("pinWrappedKey");
 const QString kSecretPinFailures = QStringLiteral("pinFailures");
 const QString kSecretRefreshToken = QStringLiteral("refreshToken");
@@ -116,7 +115,6 @@ AppController::AppController(QObject *parent)
         m_state = QStringLiteral("login");
     }
 
-    // Cold start while locked: refresh a stale vault in the background.
     if (m_state == QLatin1String("locked")) {
         maybeAutoSync();
     }
@@ -481,7 +479,6 @@ void AppController::applySyncBlob(const QByteArray &blob, bool freshLogin)
                         QDateTime::currentMSecsSinceEpoch());
 
     if (freshLogin && m_pendingSecrets) {
-        // Unlock right away with the key derived during login.
         std::shared_ptr<DerivedSecrets> secrets = m_pendingSecrets;
         m_pendingSecrets.reset();
         if (m_vault.unlockWithMasterKey(std::move(secrets->masterKey),
@@ -650,7 +647,6 @@ void AppController::enablePin(const QString &masterPassword, const QString &pin)
                                        "enabled"));
             return;
         }
-        // Move the verified master key and the PIN into the wrap worker.
         auto keyPtr = std::make_shared<Crypto::SecureBytes>(
             std::move(secrets->masterKey));
         auto pinPtr =
@@ -1210,7 +1206,6 @@ void AppController::handleAppStateChanged(Qt::ApplicationState state)
             && !m_vault.isLocked()) {
         lock();
     } else if (state == Qt::ApplicationActive) {
-        // Foregrounded (app opened/resumed): refresh the vault if stale.
         maybeAutoSync();
     }
 }

@@ -38,8 +38,6 @@ bool equalsHex(const SecureBytes &bytes, const std::string &hex)
     return toHex(bytes.data(), bytes.size()) == hex;
 }
 
-// --- Tier 1: primitives ---
-
 // RFC 7914 §11: PBKDF2-HMAC-SHA-256 test vectors.
 // https://www.rfc-editor.org/rfc/rfc7914.txt
 void testPbkdf2Rfc7914()
@@ -163,11 +161,9 @@ void testAesCbcNist()
         "9cfc4e967edb808d679f777bc6702c7d"
         "39f23369a9d9bacfa530e26304231461"
         "b2eb05e2c39be9fcda6c19078c6a9d1b");
-    // And it round-trips through our own decrypt.
     CHECK(decryptAes256CbcHmac(enc, key) == plaintext);
 }
 
-// --- Tier 2: Bitwarden protocol composition ---
 // All vectors from bitwarden/sdk-internal @ 4963a281, crate bitwarden-crypto.
 
 // kdf.rs test_master_key_derive_pbkdf2 + utils.rs test_stretch_kdf_key:

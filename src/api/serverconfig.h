@@ -14,7 +14,6 @@ struct ServerConfig {
 
     static ServerConfig cloudUs();
     static ServerConfig cloudEu();
-    // Any self-hosted base URL, e.g. "https://vault.example.com".
     static ServerConfig selfHosted(const QString &baseUrl);
 
     QString preloginUrl() const { return identityBase + "/accounts/prelogin"; }

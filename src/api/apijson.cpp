@@ -198,7 +198,6 @@ ApiError parseTokenError(int httpStatus, const QByteArray &body)
     }
     const QJsonObject obj = doc.object();
 
-    // Two-factor challenge: the error body lists available providers.
     const QJsonValue providers =
         valueOf(obj, QStringLiteral("twoFactorProviders"));
     if (providers.isArray()) {

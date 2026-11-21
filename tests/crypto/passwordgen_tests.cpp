@@ -27,7 +27,6 @@ const std::string kSymbol = "!@#$%^&*()-_=+[]{};:,.?";
 
 void runPasswordGenTests()
 {
-    // randomIndex: always in range, and (for small bounds) covers everything.
     {
         for (uint32_t bound : {1u, 2u, 7u, 10u, 62u, 100u, 256u}) {
             bool seen[256] = {false};
@@ -43,8 +42,6 @@ void runPasswordGenTests()
         CHECK_THROWS(randomIndex(0));
     }
 
-    // Default options: correct length, only allowed characters, one of each
-    // enabled class present. Checked over many samples.
     {
         PasswordOptions opts; // length 16, all classes, minDigits/minSymbols 1
         for (int i = 0; i < 300; ++i) {
@@ -61,7 +58,6 @@ void runPasswordGenTests()
         }
     }
 
-    // Length is honored across a range.
     {
         for (int len : {4, 8, 20, 64, 128}) {
             PasswordOptions opts;
@@ -70,7 +66,6 @@ void runPasswordGenTests()
         }
     }
 
-    // Minimum digit / symbol counts are met.
     {
         PasswordOptions opts;
         opts.length = 20;
@@ -83,7 +78,6 @@ void runPasswordGenTests()
         }
     }
 
-    // Avoid-ambiguous excludes I l 1 O 0 o.
     {
         PasswordOptions opts;
         opts.length = 40;
@@ -94,7 +88,6 @@ void runPasswordGenTests()
         }
     }
 
-    // A single enabled class yields only that class.
     {
         PasswordOptions opts;
         opts.length = 24;
@@ -110,7 +103,6 @@ void runPasswordGenTests()
         }
     }
 
-    // Error cases fail closed.
     {
         PasswordOptions none;
         none.lowercase = none.uppercase = none.digits = none.symbols = false;

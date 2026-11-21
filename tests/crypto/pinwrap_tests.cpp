@@ -19,14 +19,12 @@ SecureBytes pinFrom(const std::string &digits)
 
 void runPinWrapTests()
 {
-    // A fixed 32-byte "master key" to stand in for the real secret.
     uint8_t secretBytes[32];
     for (int i = 0; i < 32; ++i) {
         secretBytes[i] = static_cast<uint8_t>(i * 7 + 1);
     }
     SecureBytes secret(secretBytes, sizeof(secretBytes));
 
-    // Round-trip: same PIN recovers the exact secret.
     {
         PinWrappedKey wrapped = wrapWithPin(secret, pinFrom("1234"));
         CHECK(wrapped.salt.size() == 16);
@@ -43,7 +41,6 @@ void runPinWrapTests()
         CHECK_THROWS(unwrapWithPin(wrapped, pinFrom("")));
     }
 
-    // serialize -> parse round-trips and still unwraps.
     {
         PinWrappedKey wrapped = wrapWithPin(secret, pinFrom("987654"));
         std::string text = wrapped.serialize();
@@ -57,7 +54,6 @@ void runPinWrapTests()
         CHECK(std::memcmp(out.data(), secretBytes, 32) == 0);
     }
 
-    // Fresh salt every call: same secret+PIN yields distinct blobs, both valid.
     {
         PinWrappedKey a = wrapWithPin(secret, pinFrom("0000"));
         PinWrappedKey b = wrapWithPin(secret, pinFrom("0000"));
@@ -69,7 +65,6 @@ void runPinWrapTests()
                           secretBytes, 32) == 0);
     }
 
-    // Tampering the ciphertext or the salt breaks the MAC / KEK -> throws.
     {
         PinWrappedKey wrapped = wrapWithPin(secret, pinFrom("4242"));
 
@@ -86,7 +81,6 @@ void runPinWrapTests()
         CHECK_THROWS(unwrapWithPin(badBlob, pinFrom("4242")));
     }
 
-    // parse rejects malformed storage forms.
     {
         CHECK_THROWS(PinWrappedKey::parse("NOPE:8:64:4:AAAA:2.a|b|c"));
         CHECK_THROWS(PinWrappedKey::parse("BWPIN1:8:64:4"));          // too few
@@ -95,7 +89,6 @@ void runPinWrapTests()
         CHECK_THROWS(PinWrappedKey::parse("BWPIN1:8:64:4:AAAA:2.a|b|c"));
     }
 
-    // randomBytes returns the requested length and is non-constant.
     {
         SecureBytes r1 = randomBytes(16);
         SecureBytes r2 = randomBytes(16);

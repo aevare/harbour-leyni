@@ -23,7 +23,6 @@ void runBase64Tests()
         CHECK(std::string(decoded.begin(), decoded.end()) == v.plain);
     }
 
-    // Binary round-trip across all byte values.
     {
         std::vector<uint8_t> all(256);
         for (size_t i = 0; i < all.size(); ++i) {
@@ -32,7 +31,6 @@ void runBase64Tests()
         CHECK(base64Decode(base64Encode(all.data(), all.size())) == all);
     }
 
-    // Malformed input must throw, not decode loosely.
     CHECK_THROWS(base64Decode("Zg="));       // bad length
     CHECK_THROWS(base64Decode("Zg==="));     // bad length
     CHECK_THROWS(base64Decode("Zm 9v"));     // whitespace

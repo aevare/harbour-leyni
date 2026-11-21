@@ -79,7 +79,6 @@ public:
     void lock();
     bool isLocked() const { return m_locked; }
 
-    // --- write support (see doc/PROTOCOL.md "Writes") ---
     // Build the encrypted CipherRequestModel JSON for a NEW personal-vault
     // item of the given type from plaintext `fields` (keys: name, notes,
     // folderId, favorite, and for logins username/password/uri/totp).
@@ -118,7 +117,6 @@ public:
     QString totpCode(const QString &itemId, quint64 unixTime,
                      int *secondsRemaining, QString *errorMessage);
 
-    // --- auto-lock ---
     // 0 disables. Timer restarts on noteActivity(); fires lock().
     void setAutoLockSeconds(int seconds);
     void noteActivity();

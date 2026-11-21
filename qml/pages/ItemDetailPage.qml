@@ -134,7 +134,6 @@ Page {
 
             PageHeader { title: name }
 
-            // Username
             Item {
                 width: parent.width
                 height: Theme.itemSizeSmall
@@ -173,7 +172,6 @@ Page {
                 }
             }
 
-            // Password
             Item {
                 width: parent.width
                 height: Theme.itemSizeSmall
@@ -232,7 +230,6 @@ Page {
                 }
             }
 
-            // TOTP
             Item {
                 width: parent.width
                 height: totpColumn.height
@@ -278,7 +275,6 @@ Page {
                 }
             }
 
-            // URI
             Item {
                 width: parent.width
                 height: Theme.itemSizeSmall

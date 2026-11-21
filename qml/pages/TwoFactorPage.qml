@@ -6,7 +6,6 @@ Page {
     allowedOrientations: Orientation.All
     readonly property string pageName: "TwoFactorPage.qml"
 
-    // Default to the authenticator app (0) whenever it is offered.
     property int selectedProvider: App.twoFactorProviders.indexOf(0) !== -1
                                     ? 0
                                     : (App.twoFactorProviders.length > 0 ? App.twoFactorProviders[0] : 0)

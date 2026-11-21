@@ -15,7 +15,6 @@ Dialog {
     property string itemId: ""
     property int cipherType: 1            // 1 = Login, 2 = Secure note
 
-    // Prefill (edit); empty/defaults for create.
     property string presetName: ""
     property string presetUsername: ""
     property string presetUri: ""

@@ -139,8 +139,6 @@ QString newUuidString()
     return uuid.toLower();
 }
 
-// Plain hex (no dashes) from a freshly generated UUID, for the throwaway
-// account email.
 QString randomHex()
 {
     QString hex = newUuidString();
@@ -502,7 +500,6 @@ int main(int argc, char *argv[])
             CHECK(v->reloadSync(s.value, &err));
         };
 
-        // A vault unlocked from the account's own master key.
         Leyni::Vault::Vault vault;
         {
             bool to = false;
@@ -519,7 +516,6 @@ int main(int argc, char *argv[])
                 SecureBytes(masterKey.data(), masterKey.size()), &err));
         }
 
-        // create
         QVariantMap fields;
         fields.insert(QStringLiteral("name"), QStringLiteral("IT Login"));
         fields.insert(QStringLiteral("username"), QStringLiteral("it@x.test"));
@@ -556,7 +552,6 @@ int main(int argc, char *argv[])
         }
         std::printf("create cipher: OK\n");
 
-        // edit
         fields.insert(QStringLiteral("name"), QStringLiteral("IT Login v2"));
         fields.insert(QStringLiteral("password"), QStringLiteral("itpw-2"));
         const QByteArray updateBody =
@@ -584,7 +579,6 @@ int main(int argc, char *argv[])
         }
         std::printf("update cipher: OK\n");
 
-        // soft delete
         {
             bool to = false;
             Result<QByteArray> r = waitFor<QByteArray>(
