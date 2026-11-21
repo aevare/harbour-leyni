@@ -18,6 +18,8 @@ BuildRequires:  pkgconfig(libcrypto)
 BuildRequires:  pkgconfig(sailfishsecrets)
 BuildRequires:  desktop-file-utils
 BuildRequires:  cmake
+# provides lrelease for translations/*.ts -> .qm at build time
+BuildRequires:  qt5-qttools-linguist
 
 %description
 Native, open-source Bitwarden client for Sailfish OS

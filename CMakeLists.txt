@@ -76,15 +76,38 @@ if(BUILD_APP)
                               GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
     install(DIRECTORY qml DESTINATION share/harbour-leyni ${INSTALL_PERMS})
-    install(DIRECTORY translations DESTINATION share/harbour-leyni ${INSTALL_PERMS}
-            FILES_MATCHING PATTERN "*.qm")
+    # .ts catalogs are committed; the build only compiles the language-specific
+    # ones to .qm (lrelease ships in qt5-qttools-linguist, a spec BuildRequires)
+    # so rpm builds stay reproducible — no lupdate run at build time. The base
+    # catalog (harbour-leyni.ts) holds the English source strings and needs no
+    # .qm: untranslated qsTr() falls back to the source text.
+    FILE(GLOB TsFiles "translations/*.ts")
+    find_program(LRELEASE_EXECUTABLE NAMES lrelease lrelease-qt5)
+    if(NOT LRELEASE_EXECUTABLE)
+        message(FATAL_ERROR "lrelease not found (install qt5-qttools-linguist)")
+    endif()
+    set(QM_FILES)
+    foreach(TsFile ${TsFiles})
+        get_filename_component(QM_NAME ${TsFile} NAME_WE)
+        if(QM_NAME STREQUAL "harbour-leyni")
+            continue()
+        endif()
+        set(QM_FILE ${CMAKE_CURRENT_BINARY_DIR}/${QM_NAME}.qm)
+        # TsFile is already an absolute path (FILE(GLOB) without RELATIVE).
+        add_custom_command(OUTPUT ${QM_FILE}
+            COMMAND ${LRELEASE_EXECUTABLE} ${TsFile} -qm ${QM_FILE}
+            DEPENDS ${TsFile}
+            COMMENT "lrelease ${TsFile}")
+        list(APPEND QM_FILES ${QM_FILE})
+    endforeach()
+    add_custom_target(translations ALL DEPENDS ${QM_FILES})
+    install(FILES ${QM_FILES} DESTINATION share/harbour-leyni/translations)
     install(FILES harbour-leyni.desktop DESTINATION share/applications)
     install(FILES icons/86x86/harbour-leyni.png   DESTINATION share/icons/hicolor/86x86/apps)
     install(FILES icons/108x108/harbour-leyni.png DESTINATION share/icons/hicolor/108x108/apps)
     install(FILES icons/128x128/harbour-leyni.png DESTINATION share/icons/hicolor/128x128/apps)
     install(FILES icons/172x172/harbour-leyni.png DESTINATION share/icons/hicolor/172x172/apps)
 
-    FILE(GLOB TsFiles "translations/*.ts")
     FILE(GLOB_RECURSE QmlFiles "qml/*.qml")
     add_custom_target(distfiles
         SOURCES
