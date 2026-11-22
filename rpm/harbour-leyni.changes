@@ -1,5 +1,12 @@
 # Add newest entries at the top.
 
+* Sun Nov 22 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.4.4
+- One-shot results (copied, saved, synced, settings changes) now show as
+  toasts with success/warning/error styling instead of the plain top banner
+- Sign-in, unlock and two-factor errors show as an inline error banner under
+  the page header
+- Comment cleanup under the hood
+
 * Sat Nov 21 2026 Ævar Eggertsson <aevar@eggerts.xyz> 0.4.3
 - Show the app version in Settings → About, baked in from the release at
   build time (local builds show "dev")
