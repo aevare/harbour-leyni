@@ -1,13 +1,13 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
 Page {
     id: page
     allowedOrientations: Orientation.All
     readonly property string pageName: "ItemDetailPage.qml"
 
-    // Set by VaultPage when pushing this page. Display data only — never
-    // the secret payloads themselves.
+    // Display data only — never the secret payloads themselves.
     property string itemId: ""
     property string name: ""
     property string username: ""
@@ -20,9 +20,8 @@ Page {
     property bool hasNotes: false
     property bool hasDetails: false
 
-    // Secrets fetched on demand. Every one of these MUST be cleared when
-    // the page stops being usable (destroyed, hidden, or the vault locks)
-    // — see clearSecrets() below.
+    // Fetched on demand; MUST be cleared via clearSecrets() when the page is
+    // hidden/destroyed or the vault locks.
     property string revealedPassword: ""
     property bool notesVisible: false
     property string revealedNotes: ""
@@ -62,10 +61,8 @@ Page {
         }
     }
 
-    // The vault locking is the security-relevant event; this page only
-    // reacts to it by dropping whatever it fetched. Belt-and-suspenders
-    // with the top-level router, which also tears this page down when
-    // App.state leaves "unlocked".
+    // Belt-and-suspenders with the window router: drop fetched secrets when
+    // the vault locks.
     Connections {
         target: App
         onStateChanged: {
@@ -79,12 +76,10 @@ Page {
 
     Component.onDestruction: clearSecrets()
 
-    // remorseAction() only exists on ListItem; a pulley MenuItem needs an
-    // explicit RemorsePopup.
+    // remorseAction() exists only on ListItem; a pulley MenuItem needs a RemorsePopup.
     RemorsePopup { id: deleteRemorse }
 
-    // Only Logins and Secure Notes are editable this phase; cards/identities
-    // stay view-only (their editor fields are not built yet).
+    // Cards/identities stay view-only — their editor isn't built yet.
     readonly property bool editable: cipherType === 1 || cipherType === 2
 
     Timer {
@@ -214,8 +209,7 @@ Page {
                                      : "image://theme/icon-m-hidden"
                         onClicked: {
                             if (revealedPassword.length > 0) {
-                                // Re-masking must also drop the plaintext —
-                                // never just hide it visually.
+                                // Re-masking must drop the plaintext, not just hide it.
                                 revealedPassword = ""
                             } else {
                                 revealedPassword = App.itemPassword(itemId)
@@ -224,7 +218,7 @@ Page {
                     }
                     IconButton {
                         icon.source: "image://theme/icon-m-clipboard"
-                        // Copies without ever populating revealedPassword.
+                        // Copies without populating revealedPassword.
                         onClicked: App.copyToClipboard(App.itemPassword(itemId))
                     }
                 }
@@ -254,7 +248,7 @@ Page {
                         width: parent.width
                         visible: totpError.length === 0
                         minimumValue: 0
-                        // otpauth URIs may use periods longer than 30 s.
+                        // otpauth periods may exceed 30 s
                         maximumValue: Math.max(30, totpSeconds)
                         value: totpSeconds
                         label: qsTr("%1 s").arg(totpSeconds)
@@ -338,8 +332,7 @@ Page {
                 IconButton {
                     anchors.verticalCenter: parent.verticalCenter
                     icon.source: "image://theme/icon-m-clipboard"
-                    // Copies without ever populating revealedNotes, like the
-                    // password copy button above.
+                    // Copies without populating revealedNotes.
                     onClicked: App.copyToClipboard(App.itemNotes(itemId))
                 }
             }
@@ -416,4 +409,6 @@ Page {
 
         VerticalScrollDecorator {}
     }
+
+    AppToast {}
 }

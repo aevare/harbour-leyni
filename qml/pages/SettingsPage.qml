@@ -1,13 +1,13 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
 Page {
     id: page
     allowedOrientations: Orientation.All
     readonly property string pageName: "SettingsPage.qml"
 
-    // remorseAction() only exists on ListItem — a Button needs an explicit
-    // RemorsePopup.
+    // remorseAction() exists only on ListItem; a Button needs a RemorsePopup.
     RemorsePopup { id: signOutRemorse }
 
     SilicaFlickable {
@@ -22,10 +22,8 @@ Page {
 
             SectionHeader { text: qsTr("Security") }
 
-            // Both combos: currentIndex is set ONCE at completion instead of
-            // being bound — a binding here depends on the very setting the
-            // change handler writes, which is a binding loop. The `ready`
-            // guard keeps initialization from echoing a write back.
+            // currentIndex is set once on completion, not bound — a binding
+            // would loop with the write in onCurrentIndexChanged.
             ComboBox {
                 id: autoLockCombo
                 width: parent.width
@@ -73,8 +71,7 @@ Page {
 
             TextSwitch {
                 text: qsTr("Lock when minimized")
-                // automaticCheck off + write-on-click avoids the binding
-                // loop of checked ↔ the setting it writes.
+                // write-on-click instead of a checked↔setting binding loop
                 automaticCheck: false
                 checked: App.lockOnMinimize
                 onClicked: App.lockOnMinimize = !App.lockOnMinimize
@@ -137,4 +134,6 @@ Page {
 
         VerticalScrollDecorator {}
     }
+
+    AppToast {}
 }

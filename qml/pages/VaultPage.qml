@@ -1,5 +1,6 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
 Page {
     id: page
@@ -7,9 +8,8 @@ Page {
     readonly property string pageName: "VaultPage.qml"
 
     property var folderList: []
-    // Mirrors the header's SearchField text: the field lives inside the
-    // ListView header component, whose ids are not reliably reachable from
-    // outside it (e.g. from the ViewPlaceholder below).
+    // Mirrors the header SearchField text — its id isn't reachable from
+    // outside the header component.
     property string searchText: ""
 
     function reloadFolders() {
@@ -26,12 +26,8 @@ Page {
         }
     }
 
-    // SilicaListView computes its initial contentY before the (header +
-    // section) heights settle, landing slightly scrolled with the first
-    // section pulled up under the header — scrolling away and back forces the
-    // recompute that fixes it. Snapping to the top once layout settles does
-    // the same thing up front. interval 0 fires on the next event-loop pass,
-    // after the first layout.
+    // SilicaListView computes initial contentY before header/section heights
+    // settle; snapping to the top once layout settles (interval 0) avoids it.
     Timer {
         id: topSnap
         interval: 0
@@ -58,25 +54,20 @@ Page {
         id: listView
         anchors.fill: parent
         model: App.vaultModel
-        // No current item: otherwise the view hands focus to a list item when
-        // the search refilters the rows, which steals it from the SearchField
-        // and closes the keyboard.
+        // currentIndex: -1 — refiltering would steal focus from the
+        // SearchField and close the keyboard.
         currentIndex: -1
 
-        // The model sorts favourites first; headers only make sense when
-        // both groups exist, so they collapse when nothing is a favourite.
+        // Headers collapse to a single group when nothing is a favourite.
         section.property: "favorite"
         section.delegate: Item {
             width: listView.width
-            // Use the SectionHeader's own natural height when shown — forcing
-            // a taller height drops its bottom-aligned label onto the first
-            // item. Collapse to 0 (single "Other items" group) otherwise.
+            // SectionHeader's natural height — a forced taller height drops
+            // the label onto the first item.
             height: listView.model.hasFavorites ? sectionLabel.height : 0
             clip: true
 
-            // No width here: Silica's SectionHeader sizes itself to
-            // parent.width - 2*x. Overriding width pushed the right-aligned
-            // text past the right screen edge.
+            // No width override: SectionHeader sizes itself to parent.width - 2*x.
             SectionHeader {
                 id: sectionLabel
                 text: section === "true" ? qsTr("Favourites")
@@ -94,9 +85,8 @@ Page {
                 width: parent.width
                 placeholderText: qsTr("Search vault")
                 inputMethodHints: Qt.ImhNoPredictiveText
-                // Keep the keyboard up when focus would drift while the
-                // list refilters underneath (the model emits row-level
-                // updates, never a reset, for the same reason).
+                // Keep focus (and the keyboard) while refiltering — the model
+                // emits row updates, never a reset.
                 focusOutBehavior: FocusBehavior.KeepFocus
                 onTextChanged: {
                     page.searchText = text
@@ -182,8 +172,7 @@ Page {
             Image {
                 id: favoriteIcon
                 visible: model.favorite
-                // No icon-s-favorite-* exists in the theme; scale the
-                // medium one down.
+                // No icon-s-favorite-* in the theme; scale the medium icon down.
                 source: "image://theme/icon-m-favorite-selected"
                 sourceSize { width: Theme.iconSizeExtraSmall; height: Theme.iconSizeExtraSmall }
                 width: Theme.iconSizeExtraSmall
@@ -245,4 +234,6 @@ Page {
 
         VerticalScrollDecorator {}
     }
+
+    AppToast {}
 }

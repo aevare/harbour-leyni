@@ -1,8 +1,8 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
 
-// Cover MUST NEVER show item data — only app name, lock state, item count,
-// and the two cover actions (doc/ARCHITECTURE.md).
+// Cover MUST NEVER show item data — only lock state and item count
+// (doc/ARCHITECTURE.md).
 CoverBackground {
     Column {
         anchors.centerIn: parent
@@ -25,8 +25,7 @@ CoverBackground {
         }
     }
 
-    // CoverAction has no `visible` property on SFOS Silica — gate the whole
-    // list with `enabled` instead (both actions are unlocked-only).
+    // CoverAction has no `visible` on SFOS — gate the list with `enabled`.
     CoverActionList {
         enabled: App.state === "unlocked"
 

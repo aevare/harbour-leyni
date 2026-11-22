@@ -1,15 +1,13 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
 Page {
     id: page
     allowedOrientations: Orientation.All
     readonly property string pageName: "UnlockPage.qml"
 
-    // Start in PIN mode when a PIN is set up; the "Use master password" link
-    // switches to the password field. When no PIN exists, only the password
-    // field is shown. This is presentation only — the C++ side decides which
-    // unlock actually succeeds.
+    // Presentation only — C++ decides which unlock succeeds.
     property bool usePassword: !App.pinEnabled
 
     function clearFields() {
@@ -32,8 +30,7 @@ Page {
 
     Component.onDestruction: clearFields()
 
-    // remorseAction() only exists on ListItem — a pulley MenuItem needs an
-    // explicit RemorsePopup.
+    // remorseAction() exists only on ListItem; a pulley MenuItem needs a RemorsePopup.
     RemorsePopup { id: signOutRemorse }
 
     SilicaFlickable {
@@ -126,12 +123,16 @@ Page {
                 }
             }
 
-            InfoLabel {
+            InlineBanner {
+                shown: App.lastError.length > 0
+                variant: "error"
+                title: qsTr("Couldn't unlock")
                 text: App.lastError
-                visible: App.lastError.length > 0
             }
         }
 
         VerticalScrollDecorator {}
     }
+
+    AppToast {}
 }

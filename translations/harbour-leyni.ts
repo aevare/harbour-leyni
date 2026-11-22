@@ -238,6 +238,10 @@
         <source>Master password</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Couldn&apos;t sign in</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsPage</name>
@@ -399,6 +403,10 @@
         <source>Verify</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Couldn&apos;t verify</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UnlockPage</name>
@@ -436,6 +444,10 @@
     </message>
     <message>
         <source>Use master password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Couldn&apos;t unlock</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

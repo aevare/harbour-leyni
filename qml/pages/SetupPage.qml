@@ -1,16 +1,13 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
 Page {
     id: page
     allowedOrientations: Orientation.All
     readonly property string pageName: "SetupPage.qml"
 
-    // Explicit navigation is required here: SetupPage is part of the
-    // router's allowed family for the "login" state (so it can be pushed
-    // from LoginPage's "Change account"), which means the router will NOT
-    // move away from this page on the setup→login state change — and when
-    // re-configuring an account the state doesn't change at all.
+    // The router keeps SetupPage in the "login" family, so navigate explicitly.
     function saveAndContinue() {
         App.configureAccount(serverField.text, emailField.text)
         pageStack.replaceAbove(null, Qt.resolvedUrl("LoginPage.qml"))
@@ -67,4 +64,6 @@ Page {
 
         VerticalScrollDecorator {}
     }
+
+    AppToast {}
 }

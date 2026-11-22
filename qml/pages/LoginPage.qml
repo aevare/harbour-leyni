@@ -1,14 +1,13 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
 Page {
     id: page
     allowedOrientations: Orientation.All
     readonly property string pageName: "LoginPage.qml"
 
-    // Clear the typed password whenever this page stops being the top of
-    // the stack (another page pushed on top, or it is being popped/torn
-    // down) — never let it linger once it is no longer visible.
+    // Never let the typed password linger once this page is hidden.
     onStatusChanged: {
         if (status === PageStatus.Deactivating) { passwordField.text = "" }
     }
@@ -65,12 +64,16 @@ Page {
                 onClicked: App.startLogin(passwordField.text)
             }
 
-            InfoLabel {
+            InlineBanner {
+                shown: App.lastError.length > 0
+                variant: "error"
+                title: qsTr("Couldn't sign in")
                 text: App.lastError
-                visible: App.lastError.length > 0
             }
         }
 
         VerticalScrollDecorator {}
     }
+
+    AppToast {}
 }

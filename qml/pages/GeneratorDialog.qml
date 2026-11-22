@@ -1,9 +1,9 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
-// Random password generator. All generation happens in C++ (App.generatePassword
-// → the audited crypto core); this dialog only chooses options and displays the
-// result. The caller reads `password` on `accepted`.
+// Password generator. Generation happens in C++ (audited crypto core); the
+// caller reads `password` on accepted.
 Dialog {
     id: dialog
     allowedOrientations: Orientation.All
@@ -12,7 +12,7 @@ Dialog {
     property string password: ""
     property string acceptText: qsTr("Use")   // "Use" (fill a field) or "Copy"
 
-    // Guards regeneration during initial property setup.
+    // Guards regeneration during initial setup.
     property bool ready: false
 
     readonly property bool hasClass: upperSwitch.checked || lowerSwitch.checked
@@ -141,4 +141,6 @@ Dialog {
 
         VerticalScrollDecorator {}
     }
+
+    AppToast {}
 }

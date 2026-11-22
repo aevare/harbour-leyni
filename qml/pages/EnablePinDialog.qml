@@ -1,9 +1,9 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
-// Collects the master password (to authorize the change and re-derive the
-// master key) and a new PIN. On accept, the caller reads `masterPassword` and
-// `pin` and hands them to App.enablePin(). Nothing is stored here.
+// Caller passes masterPassword/pin to App.enablePin() on accept; nothing is
+// stored here.
 Dialog {
     id: dialog
     allowedOrientations: Orientation.All
@@ -16,7 +16,7 @@ Dialog {
                && pinField.text.length >= minPinLength
                && pinField.text === confirmField.text
 
-    // Clear the entered secrets from QML once the dialog goes away.
+    // Entered secrets must not linger after the dialog closes.
     function clearFields() {
         passwordField.text = ""
         pinField.text = ""
@@ -78,4 +78,6 @@ Dialog {
             }
         }
     }
+
+    AppToast {}
 }

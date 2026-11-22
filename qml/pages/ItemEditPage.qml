@@ -1,11 +1,10 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
-// Create or edit a Login or Secure Note. Plaintext entered here is handed to
-// C++ (App.createItem/saveItem), encrypted in the vault layer, and pushed to
-// the server; nothing decrypted is stored locally. On edit, every editable
-// field is prefilled with its current value so saving never erases a field
-// the user did not touch (see App.itemPassword/itemNotes/itemTotpSecret).
+// Create/edit a Login or Secure Note. Plaintext is encrypted in the vault
+// layer — never stored locally. On edit, fields are prefilled so untouched
+// values are re-saved unchanged.
 Dialog {
     id: dialog
     allowedOrientations: Orientation.All
@@ -65,7 +64,6 @@ Dialog {
         folderList = App.folders()
         folderCombo.currentIndex = folderIndexFor(presetFolderId)
         if (mode === "edit") {
-            // Prefill secrets so an untouched field is re-saved unchanged.
             if (cipherType === 1) {
                 passwordField.text = App.itemPassword(itemId)
                 totpField.text = App.itemTotpSecret(itemId)
@@ -96,7 +94,7 @@ Dialog {
                 acceptText: qsTr("Save")
             }
 
-            // Type is only choosable when creating; edit keeps the item's type.
+            // Type can't change on edit.
             ComboBox {
                 id: typeCombo
                 visible: mode === "create"
@@ -203,4 +201,6 @@ Dialog {
 
         VerticalScrollDecorator {}
     }
+
+    AppToast {}
 }

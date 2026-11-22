@@ -145,11 +145,11 @@ void AppController::setAutoLockMinutes(int minutes)
     m_settings.setValue(QLatin1String(kSettingAutoLockMinutes), minutes);
     m_vault.setAutoLockSeconds(minutes * 60);
     emit settingsChanged();
-    // Settings shows no lastError, so confirm the change through the same
-    // global notice banner as the other App feedback (cf. enablePin).
+    // Settings shows no lastError — confirm via the toast like other App feedback.
     emit notify(minutes <= 0 ? QStringLiteral("Auto-lock off")
                              : QStringLiteral("Auto-lock after %1 min")
-                                   .arg(minutes));
+                                   .arg(minutes),
+                 QStringLiteral("success"));
 }
 
 int AppController::clipboardClearSeconds() const
@@ -164,7 +164,8 @@ void AppController::setClipboardClearSeconds(int seconds)
     emit settingsChanged();
     emit notify(seconds <= 0 ? QStringLiteral("Clipboard auto-clear off")
                              : QStringLiteral("Clipboard clears in %1 s")
-                                   .arg(seconds));
+                                   .arg(seconds),
+                 QStringLiteral("success"));
 }
 
 bool AppController::lockOnMinimize() const
@@ -178,7 +179,8 @@ void AppController::setLockOnMinimize(bool on)
     m_settings.setValue(QLatin1String(kSettingLockOnMinimize), on);
     emit settingsChanged();
     emit notify(on ? QStringLiteral("Lock when minimized: on")
-                   : QStringLiteral("Lock when minimized: off"));
+                   : QStringLiteral("Lock when minimized: off"),
+                 QStringLiteral("success"));
 }
 
 void AppController::setState(const QString &state)
@@ -411,7 +413,8 @@ void AppController::requestEmailCode()
                              deviceInfo().identifier,
                              [this](Api::Result<QByteArray> result) {
         if (result.ok()) {
-            emit notify(QStringLiteral("Code sent — check your email"));
+            emit notify(QStringLiteral("Code sent — check your email"),
+                        QStringLiteral("success"));
         } else {
             setError(result.error.message);
         }
@@ -451,14 +454,16 @@ void AppController::applySyncBlob(const QByteArray &blob, bool freshLogin)
 {
     if (!m_syncStore.save(blob)) {
         // Non-fatal: the in-memory vault still works this session.
-        emit notify(QStringLiteral("Warning: could not store vault locally"));
+        emit notify(QStringLiteral("Warning: could not store vault locally"),
+                    QStringLiteral("warning"));
     }
 
     QString error;
     if (!m_vault.isLocked()) {
         if (m_vault.reloadSync(blob, &error)) {
             emit vaultChanged();
-            emit notify(QStringLiteral("Vault synced"));
+            emit notify(QStringLiteral("Vault synced"),
+                        QStringLiteral("success"));
             m_model.refresh();
             m_settings.setValue(QLatin1String(kSettingSyncLastSync),
                                 QDateTime::currentMSecsSinceEpoch());
@@ -610,21 +615,23 @@ void AppController::forgetPin()
 
 void AppController::enablePin(const QString &masterPassword, const QString &pin)
 {
-    // enablePin runs from Settings, whose page does not display App.lastError.
-    // Feedback (success and failure) is therefore surfaced via notify(), the
-    // global banner — mirroring the "PIN unlock enabled" success toast.
+    // Runs from Settings (no lastError shown there): feedback goes through
+    // notify() toasts.
     if (pin.size() < kMinPinLength) {
         emit notify(QStringLiteral("PIN must be at least %1 digits")
-                        .arg(kMinPinLength));
+                        .arg(kMinPinLength),
+                    QStringLiteral("error"));
         return;
     }
     if (!m_syncStore.exists()) {
-        emit notify(QStringLiteral("No vault — sign in first"));
+        emit notify(QStringLiteral("No vault — sign in first"),
+                    QStringLiteral("error"));
         return;
     }
     Crypto::KdfParams params = storedKdfParams();
     if (params.iterations == 0) {
-        emit notify(QStringLiteral("Missing KDF parameters — sign in again"));
+        emit notify(QStringLiteral("Missing KDF parameters — sign in again"),
+                    QStringLiteral("error"));
         return;
     }
     setError(QString());
@@ -637,14 +644,15 @@ void AppController::enablePin(const QString &masterPassword, const QString &pin)
                 [this, pin](std::shared_ptr<DerivedSecrets> secrets) {
         if (!secrets->error.isEmpty()) {
             setBusy(false);
-            emit notify(secrets->error);
+            emit notify(secrets->error, QStringLiteral("error"));
             return;
         }
         QString error;
         if (!m_vault.verifyMasterKey(secrets->masterKey, &error)) {
             setBusy(false);
             emit notify(QStringLiteral("Wrong master password — PIN not "
-                                       "enabled"));
+                                       "enabled"),
+                        QStringLiteral("error"));
             return;
         }
         auto keyPtr = std::make_shared<Crypto::SecureBytes>(
@@ -667,18 +675,20 @@ void AppController::enablePin(const QString &masterPassword, const QString &pin)
             [this](std::shared_ptr<PinResult> result) {
                 setBusy(false);
                 if (!result->error.isEmpty()) {
-                    emit notify(result->error);
+                    emit notify(result->error, QStringLiteral("error"));
                     return;
                 }
                 if (!m_secrets.store(kSecretPinKey, result->blob)
                         || !setPinFailures(0)) {
                     m_secrets.remove(kSecretPinKey);
-                    emit notify(QStringLiteral("Could not store PIN"));
+                    emit notify(QStringLiteral("Could not store PIN"),
+                                QStringLiteral("error"));
                     return;
                 }
                 m_pinEnabled = true;
                 emit pinChanged();
-                emit notify(QStringLiteral("PIN unlock enabled"));
+                emit notify(QStringLiteral("PIN unlock enabled"),
+                            QStringLiteral("success"));
             });
     });
 }
@@ -686,7 +696,8 @@ void AppController::enablePin(const QString &masterPassword, const QString &pin)
 void AppController::disablePin()
 {
     forgetPin();
-    emit notify(QStringLiteral("PIN unlock disabled"));
+    emit notify(QStringLiteral("PIN unlock disabled"),
+                QStringLiteral("success"));
 }
 
 void AppController::unlockWithPin(const QString &pin)
@@ -894,14 +905,16 @@ void AppController::refreshThenWrite(const CipherWriteCall &doWrite,
 {
     if (m_refreshToken.isEmpty()) {
         setBusy(false);
-        emit notify(QStringLiteral("Not signed in — Sync or sign in again"));
+        emit notify(QStringLiteral("Not signed in — Sync or sign in again"),
+                    QStringLiteral("error"));
         return;
     }
     m_api.refreshToken(m_refreshToken, [this, doWrite, successMessage](
                                            Api::Result<Api::TokenResponse> r) {
         if (!r.ok()) {
             setBusy(false);
-            emit notify(QStringLiteral("Session expired — sign in again"));
+            emit notify(QStringLiteral("Session expired — sign in again"),
+                        QStringLiteral("error"));
             return;
         }
         m_accessToken = r.value.accessToken;
@@ -922,7 +935,8 @@ void AppController::finishWrite(const Api::Result<QByteArray> &writeResult,
         setBusy(false);
         emit notify(writeResult.error.message.isEmpty()
                         ? QStringLiteral("Save failed")
-                        : writeResult.error.message);
+                        : writeResult.error.message,
+                    QStringLiteral("error"));
         return;
     }
     // Pull the server's canonical state rather than patching locally.
@@ -930,7 +944,8 @@ void AppController::finishWrite(const Api::Result<QByteArray> &writeResult,
                                   Api::Result<QByteArray> syncResult) {
         setBusy(false);
         if (!syncResult.ok()) {
-            emit notify(QStringLiteral("Saved — sync failed, pull to refresh"));
+            emit notify(QStringLiteral("Saved — sync failed, pull to refresh"),
+                        QStringLiteral("warning"));
             return;
         }
         applyWriteSync(syncResult.value, successMessage);
@@ -941,13 +956,14 @@ void AppController::applyWriteSync(const QByteArray &blob,
                                    const QString &successMessage)
 {
     if (!m_syncStore.save(blob)) {
-        emit notify(QStringLiteral("Warning: could not store vault locally"));
+        emit notify(QStringLiteral("Warning: could not store vault locally"),
+                    QStringLiteral("warning"));
     }
     QString error;
     if (m_vault.reloadSync(blob, &error)) {
         m_model.refresh();
         emit vaultChanged();
-        emit notify(successMessage);
+        emit notify(successMessage, QStringLiteral("success"));
     } else {
         // profileKey changed (password rotated elsewhere) — must re-unlock.
         setState(QStringLiteral("locked"));
@@ -958,7 +974,8 @@ void AppController::applyWriteSync(const QByteArray &blob,
 void AppController::createItem(int type, const QVariantMap &fields)
 {
     if (m_state != QLatin1String("unlocked")) {
-        emit notify(QStringLiteral("Unlock the vault first"));
+        emit notify(QStringLiteral("Unlock the vault first"),
+                    QStringLiteral("error"));
         return;
     }
     QString error;
@@ -966,7 +983,8 @@ void AppController::createItem(int type, const QVariantMap &fields)
         static_cast<Vault::CipherType>(type), fields, &error);
     if (body.isEmpty()) {
         emit notify(error.isEmpty() ? QStringLiteral("Could not build item")
-                                    : error);
+                                    : error,
+                    QStringLiteral("error"));
         return;
     }
     noteActivity();
@@ -983,14 +1001,16 @@ void AppController::createItem(int type, const QVariantMap &fields)
 void AppController::saveItem(const QString &itemId, const QVariantMap &fields)
 {
     if (m_state != QLatin1String("unlocked")) {
-        emit notify(QStringLiteral("Unlock the vault first"));
+        emit notify(QStringLiteral("Unlock the vault first"),
+                    QStringLiteral("error"));
         return;
     }
     QString error;
     const QByteArray body = m_vault.buildUpdateBody(itemId, fields, &error);
     if (body.isEmpty()) {
         emit notify(error.isEmpty() ? QStringLiteral("Could not build item")
-                                    : error);
+                                    : error,
+                    QStringLiteral("error"));
         return;
     }
     noteActivity();
@@ -1007,7 +1027,8 @@ void AppController::saveItem(const QString &itemId, const QVariantMap &fields)
 void AppController::deleteItem(const QString &itemId)
 {
     if (m_state != QLatin1String("unlocked")) {
-        emit notify(QStringLiteral("Unlock the vault first"));
+        emit notify(QStringLiteral("Unlock the vault first"),
+                    QStringLiteral("error"));
         return;
     }
     noteActivity();
@@ -1178,9 +1199,10 @@ void AppController::copyToClipboard(const QString &text)
     const int seconds = clipboardClearSeconds();
     if (seconds > 0) {
         m_clipboardTimer.start(seconds * 1000);
-        emit notify(QStringLiteral("Copied — clears in %1 s").arg(seconds));
+        emit notify(QStringLiteral("Copied — clears in %1 s").arg(seconds),
+                    QStringLiteral("success"));
     } else {
-        emit notify(QStringLiteral("Copied"));
+        emit notify(QStringLiteral("Copied"), QStringLiteral("success"));
     }
     noteActivity();
 }

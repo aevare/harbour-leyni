@@ -160,7 +160,8 @@ signals:
     void settingsChanged();
     void pinChanged();
     // One-shot toast requests for QML (e.g. "Copied — clears in 30 s").
-    void notify(const QString &message);
+    // variant is a Toast.qml variant: "info" | "success" | "warning" | "error".
+    void notify(const QString &message, const QString &variant);
 
 private:
     void setState(const QString &state);

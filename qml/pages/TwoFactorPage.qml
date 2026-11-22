@@ -1,5 +1,6 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import "../components"
 
 Page {
     id: page
@@ -86,12 +87,16 @@ Page {
                 onClicked: App.submitTwoFactor(selectedProvider, codeField.text, rememberSwitch.checked)
             }
 
-            InfoLabel {
+            InlineBanner {
+                shown: App.lastError.length > 0
+                variant: "error"
+                title: qsTr("Couldn't verify")
                 text: App.lastError
-                visible: App.lastError.length > 0
             }
         }
 
         VerticalScrollDecorator {}
     }
+
+    AppToast {}
 }
